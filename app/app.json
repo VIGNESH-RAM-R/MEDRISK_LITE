@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "MedRisk Lite",
+    "slug": "medrisk-lite",
+    "scheme": "medrisklite",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "description": "FMEA tool for portable ultrasound probes",
+    "web": {
+      "bundler": "metro",
+      "name": "MedRisk Lite",
+      "shortName": "MedRisk Lite",
+      "description": "FMEA tool for portable ultrasound probes",
+      "themeColor": "#8b5cf6",
+      "backgroundColor": "#0d1424"
+    },
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}

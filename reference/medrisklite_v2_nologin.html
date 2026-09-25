@@ -1,0 +1,2270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedRisk Lite — FMEA Risk Assessment Platform</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 8l16 6v12c0 12-7 22-16 26-9-4-16-14-16-26V14l16-6z' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linejoin='round'/%3E%3Cpath d='M19 33h6l3-8 5 15 4-10 2 3h7' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script>(function(){try{var t=localStorage.getItem('medrisklite-theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Libre+Franklin:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --bg:#f2f4f9;
+    --surface:#ffffff;
+    --surface-2:#f6f7fb;
+    --border: #ecedf3;
+    --text:#161b28;
+    --brand:#22d3ee;
+    --brand-2:#8b5cf6;
+    --amber:#f59e0b;
+    --green:#16a34a;
+    --red:#e11d48;
+    --ink-1: rgba(15,20,35,.86);
+    --ink-2: rgba(15,20,35,.62);
+    --ink-3: rgba(15,20,35,.46);
+    --ink-4: rgba(15,20,35,.30);
+    --shadow-card: 0 1px 2px rgba(16,24,40,.04), 0 10px 24px -14px rgba(16,24,40,.12);
+    --scrollbar-thumb: rgba(15,20,35,.14);
+  }
+  html.dark{
+    --bg:#0a0e16;
+    --surface:#131a2a;
+    --surface-2:#1a2236;
+    --border: rgba(255,255,255,.08);
+    --text:#eef1f8;
+    --ink-1: rgba(255,255,255,.92);
+    --ink-2: rgba(255,255,255,.70);
+    --ink-3: rgba(255,255,255,.50);
+    --ink-4: rgba(255,255,255,.32);
+    --shadow-card: 0 1px 2px rgba(0,0,0,.25), 0 14px 28px -14px rgba(0,0,0,.55);
+    --scrollbar-thumb: rgba(255,255,255,.16);
+  }
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg); color:var(--text); font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; transition:background .2s ease, color .2s ease;}
+  h1,h2,h3,.font-bold,.font-extrabold{letter-spacing:-0.015em;}
+  #page-title,.font-display{ font-family:'Libre Franklin', 'Inter', ui-sans-serif, sans-serif; letter-spacing:-0.02em; font-weight:800; }
+  ::-webkit-scrollbar{width:9px; height:9px;}
+  ::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb); border-radius:6px;}
+  .sidebar-btn{transition:background .15s ease, color .15s ease;}
+  .sidebar-btn.active{background:rgba(139,92,246,.10); color:#4c1d95;}
+  html.dark .sidebar-btn.active{background:rgba(139,92,246,.20); color:#d8c9ff;}
+  .sidebar-btn.active .tile{box-shadow:0 0 0 2px rgba(34,211,238,.55), 0 0 14px rgba(34,211,238,.25);}
+  .tile{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10.5px;color:#fff;flex-shrink:0;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-card); transition:background .2s ease, border-color .2s ease;}
+  .icon-sun,.icon-moon{display:block;}
+  html.dark .icon-sun{display:none;}
+  html:not(.dark) .icon-moon{display:none;}
+  #themeToggleBtn{transition:background .15s ease, transform .15s ease;}
+  #themeToggleBtn:hover{transform:scale(1.06);}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.02em;}
+  .badge-acceptable{background:rgba(52,211,153,.14);color:#34d399;}
+  .badge-alarp{background:rgba(245,158,11,.16);color:#f59e0b;}
+  .badge-unacceptable{background:rgba(251,113,133,.16);color:#fb7185;}
+  .hotspot{cursor:pointer;transition:r .15s ease;}
+  .hotspot:hover{r:11;}
+  .fade-in{animation:fadeIn .25s ease both;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{color:var(--brand);}
+  .progress-ring{transition:stroke-dashoffset .4s ease;}
+  .scrollfade{max-height:520px;overflow-y:auto;}
+  .clause-pending{opacity:.55;}
+  .chat-bubble-user{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;border-radius:16px 16px 4px 16px;font-weight:500;}
+  .chat-bubble-ai{background:var(--surface-2);border:1px solid var(--border);border-radius:16px 16px 16px 4px;}
+  .mic-active{background:var(--red) !important;animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(251,113,133,.5);}70%{box-shadow:0 0 0 10px rgba(251,113,133,0);}100%{box-shadow:0 0 0 0 rgba(251,113,133,0);}}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.3;animation:blink 1s infinite;margin-right:3px;}
+  .dot:nth-child(2){animation-delay:.2s;}
+  .dot:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,100%{opacity:.2;}50%{opacity:1;}}
+  .toast{background:#1b2338;border:1px solid rgba(255,255,255,.14);color:#eef1f8;padding:10px 14px;border-radius:10px;font-size:12.5px;box-shadow:0 10px 24px -8px rgba(0,0,0,.6);max-width:320px;animation:toastIn .2s ease both;}
+  .toast.err{border-color:rgba(251,113,133,.45);}
+  @keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---- Login split panel ---- */
+  #loginFormPanel{
+    --lp-bg:#0d1424; --lp-text:#eef1f8; --lp-sub:rgba(238,241,248,.55);
+    --lp-card-border:rgba(255,255,255,.10); --lp-footer:rgba(238,241,248,.35);
+    background:var(--lp-bg); color:var(--lp-text); transition:background .25s ease,color .25s ease;
+  }
+  #loginFormPanel.light{
+    --lp-bg:#ffffff; --lp-text:#12172a; --lp-sub:#6b7280;
+    --lp-card-border:#e8eaf0; --lp-footer:#9aa1b0;
+  }
+  .lp-toggle{border:1px solid var(--lp-card-border); background:transparent; color:var(--lp-text);}
+  .login-float-card{background:rgba(19,26,45,.72); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,.10); box-shadow:0 20px 40px -18px rgba(0,0,0,.6);}
+  .login-hero-grid{background-image:linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size:34px 34px;}
+  @keyframes floatSlow{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+
+  /* ---- Light theme flip for the main app shell only (login screen is excluded/unaffected). ----
+     These rules only apply when html does NOT have .dark — in dark mode the original
+     text-white/bg-white/* utility classes are left alone, which is what they were authored for. */
+  #appRoot{ color:var(--text); }
+  html:not(.dark) #appRoot .text-white{ color:var(--ink-1) !important; }
+  html:not(.dark) #appRoot .text-white\/85{ color:rgba(15,20,35,.85) !important; }
+  html:not(.dark) #appRoot .text-white\/80{ color:rgba(15,20,35,.80) !important; }
+  html:not(.dark) #appRoot .text-white\/75{ color:rgba(15,20,35,.72) !important; }
+  html:not(.dark) #appRoot .text-white\/70{ color:rgba(15,20,35,.68) !important; }
+  html:not(.dark) #appRoot .text-white\/60{ color:rgba(15,20,35,.60) !important; }
+  html:not(.dark) #appRoot .text-white\/55{ color:rgba(15,20,35,.55) !important; }
+  html:not(.dark) #appRoot .text-white\/50{ color:rgba(15,20,35,.52) !important; }
+  html:not(.dark) #appRoot .text-white\/45{ color:rgba(15,20,35,.48) !important; }
+  html:not(.dark) #appRoot .text-white\/40{ color:rgba(15,20,35,.42) !important; }
+  html:not(.dark) #appRoot .text-white\/35{ color:rgba(15,20,35,.38) !important; }
+  html:not(.dark) #appRoot .text-white\/30{ color:rgba(15,20,35,.34) !important; }
+  html:not(.dark) #appRoot .bg-white\/5{ background-color:rgba(15,20,35,.035) !important; }
+  html:not(.dark) #appRoot .bg-white\/8{ background-color:rgba(15,20,35,.05) !important; }
+  html:not(.dark) #appRoot .bg-white\/10{ background-color:rgba(15,20,35,.06) !important; }
+  html:not(.dark) #appRoot .bg-white\/15{ background-color:rgba(15,20,35,.09) !important; }
+  html:not(.dark) #appRoot .hover\:bg-white\/10:hover{ background-color:rgba(15,20,35,.06) !important; }
+  html:not(.dark) #appRoot .hover\:bg-white\/15:hover{ background-color:rgba(15,20,35,.09) !important; }
+  html:not(.dark) #appRoot .border-white\/8{ border-color:rgba(15,20,35,.08) !important; }
+  html:not(.dark) #appRoot .border-white\/10{ border-color:rgba(15,20,35,.10) !important; }
+  html:not(.dark) #appRoot .placeholder-white\/25::placeholder{ color:rgba(15,20,35,.32) !important; }
+  html:not(.dark) #appRoot .placeholder-white\/30{ color:rgba(15,20,35,.36) !important; }
+  html:not(.dark) #appRoot [style*="rgba(255,255,255,.04)"]{ background:rgba(15,20,35,.035) !important; }
+  html:not(.dark) #appRoot [style*="rgba(255,255,255,.06)"]{ background:rgba(15,20,35,.05) !important; }
+  html:not(.dark) #appRoot [style*="rgba(255,255,255,.08)"]{ background:rgba(15,20,35,.06) !important; color:rgba(15,20,35,.55) !important; }
+  #appRoot .ring-track{ stroke:rgba(15,20,35,.08); }
+  html.dark #appRoot .ring-track{ stroke:rgba(255,255,255,.10); }
+</style>
+</head>
+<body class="text-[14px]">
+
+<div id="appRoot" class="flex min-h-screen">
+  <!-- SIDEBAR -->
+  <aside class="w-[248px] shrink-0 flex flex-col" style="background:var(--surface); border-right:1px solid var(--border);">
+    <div class="px-5 pt-6 pb-5">
+      <div class="flex items-center gap-2.5">
+        <div class="tile" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));"><svg viewBox="0 0 24 24" width="62%" height="62%" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.4l7.2 2.6v5.6c0 5.3-3.1 9.9-7.2 11.4-4.1-1.5-7.2-6.1-7.2-11.4V5l7.2-2.6z" stroke-width="1.7"/><path d="M6.6 13.1h2.3l1.3-3.3 2 6.3 1.5-4.3.9 1.3h3" stroke-width="1.5"/></svg></div>
+        <div>
+          <div class="font-display text-[15px] leading-tight" style="color:var(--ink-1);">MedRisk Lite</div>
+          <div class="text-[10px] leading-tight" style="color:var(--ink-3);">FMEA Risk Platform</div>
+        </div>
+      </div>
+      <div class="mt-4 text-[10.5px] leading-snug" style="color:var(--ink-3);">ISO 14971:2019 aligned · Portable Ultrasound Probe</div>
+    </div>
+    <nav id="sidebar-nav" class="px-3 space-y-1 flex-1 overflow-y-auto pb-4"></nav>
+    <div class="px-5 py-4 text-[10.5px] border-t leading-snug" style="color:var(--ink-4); border-color:var(--border);">Data stays in your browser — nothing is uploaded.</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 min-w-0">
+    <header class="px-8 py-5 flex items-center justify-between" style="background:var(--surface); border-bottom:1px solid var(--border); color:var(--ink-1);">
+      <div>
+        <h1 id="page-title" class="text-xl font-bold">Dashboard</h1>
+        <p id="page-sub" class="text-[12.5px] mt-0.5" style="color:var(--ink-3);">Overview and risk summary</p>
+      </div>
+      <div class="flex items-center gap-2 text-[11.5px]">
+        <span class="px-3 py-1.5 rounded-full" style="background:var(--surface-2); color:var(--ink-2); border:1px solid var(--border);">Device: <b>Portable Ultrasound Probe</b></span>
+        <span id="save-indicator" class="px-3 py-1.5 rounded-full" style="background:var(--surface-2); color:var(--ink-3); border:1px solid var(--border);">Connecting to database…</span>
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--surface-2); border:1px solid var(--border); color:var(--ink-2);" title="Toggle light / dark theme" aria-label="Toggle theme">
+          <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </header>
+    <div id="view-root" class="p-8"></div>
+  </main>
+</div>
+
+<div id="toastWrap" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 items-end"></div>
+
+<div id="authOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8" style="background:#05080f;display:none;">
+  <div class="w-full flex rounded-[28px] overflow-hidden shadow-2xl" style="max-width:920px; min-height:560px; box-shadow:0 40px 90px -30px rgba(0,0,0,.8);">
+
+    <!-- LEFT: form panel (theme-toggleable) -->
+    <div id="loginFormPanel" class="w-full sm:w-[42%] shrink-0 flex flex-col p-8 sm:p-9 relative">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="tile" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));width:30px;height:30px;font-size:11px;"><svg viewBox="0 0 24 24" width="62%" height="62%" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.4l7.2 2.6v5.6c0 5.3-3.1 9.9-7.2 11.4-4.1-1.5-7.2-6.1-7.2-11.4V5l7.2-2.6z" stroke-width="1.7"/><path d="M6.6 13.1h2.3l1.3-3.3 2 6.3 1.5-4.3.9 1.3h3" stroke-width="1.5"/></svg></div>
+          <span class="font-display text-[14px]">MedRisk Lite</span>
+        </div>
+        <button id="loginThemeToggle" class="lp-toggle text-[11px] font-semibold px-2.5 py-1.5 rounded-full flex items-center gap-1.5">
+          <span id="loginThemeIcon">🌙</span><span id="loginThemeLabel">Dark</span>
+        </button>
+      </div>
+
+      <div class="flex-1 flex flex-col justify-center">
+        <div class="font-display text-[26px] leading-tight mb-2">Welcome to<br>MedRisk Lite</div>
+        <div class="text-[12.5px] mb-7 leading-relaxed" style="color:var(--lp-sub);">Sign in to sync your risk data to the cloud, or jump straight in as a guest — no forms, no passwords.</div>
+
+        <div id="authError" class="hidden text-[11.5px] text-rose-400 mb-3"></div>
+
+        <button id="googleLoginBtn" class="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-lg font-semibold text-[13px] bg-white text-[#1f1f1f] mb-2.5" style="border:1px solid var(--lp-card-border);">
+          <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.2 4 9.5 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.5-2.1 14.3-5.6l-6.6-5.6C29.6 34.7 27 35.5 24 35.5c-5.2 0-9.6-3.4-11.2-8.1l-6.5 5C9.4 39.5 16.1 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.6 5.6C41.5 36 44 30.5 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+          Continue with Google
+        </button>
+        <button id="guestLoginBtn" class="w-full px-4 py-2.5 rounded-lg font-semibold text-[13px]" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;">Continue as Guest</button>
+      </div>
+
+      <div class="text-[10px] leading-relaxed" style="color:var(--lp-footer);">MedRisk Lite, FMEA Risk Platform &nbsp;·&nbsp; Your data stays shared across everyone using this tool</div>
+    </div>
+
+    <!-- RIGHT: hero panel (always dark, decorative) -->
+    <div class="hidden sm:flex flex-1 relative overflow-hidden flex-col justify-between p-9" style="background:radial-gradient(1100px circle at 15% 0%, rgba(34,211,238,.16), transparent 45%), radial-gradient(900px circle at 100% 100%, rgba(139,92,246,.20), transparent 45%), linear-gradient(160deg,#0a1220,#0d1a2b 55%,#0a1220);">
+      <div class="absolute inset-0 login-hero-grid opacity-40"></div>
+
+      <div class="relative" style="height:230px;">
+        <div class="login-float-card absolute rounded-2xl p-4" style="top:0; right:10px; width:190px; animation:floatSlow 6s ease-in-out infinite;">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10.5px] font-semibold text-white/70">Compliance Score</span>
+            <span class="text-[9px] text-white/35">Live</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div style="width:52px;height:52px;border-radius:50%;background:conic-gradient(#22d3ee 0% 71%, rgba(255,255,255,.12) 71% 100%);display:flex;align-items:center;justify-content:center;">
+              <div style="width:38px;height:38px;border-radius:50%;background:#0d1a2b;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;">71%</div>
+            </div>
+            <div class="text-[10px] text-white/50 leading-snug">ISO 14971:2019<br>clause tracker</div>
+          </div>
+        </div>
+
+        <div class="login-float-card absolute rounded-2xl p-4" style="top:96px; right:120px; width:200px; animation:floatSlow 7s ease-in-out infinite .5s;">
+          <div class="text-[10.5px] font-semibold text-white/70 mb-1.5">Highest Risk</div>
+          <div class="text-[12px] font-bold text-white mb-1">Housing crack / seal breach</div>
+          <div class="flex items-center justify-between">
+            <span class="text-[16px] font-extrabold" style="color:#fb7185;">RPN 90</span>
+            <span class="text-[9.5px] font-bold px-2 py-0.5 rounded-full" style="background:rgba(251,113,133,.18);color:#fb7185;">ALARP</span>
+          </div>
+        </div>
+
+        <div class="login-float-card absolute rounded-2xl p-4" style="top:150px; right:0; width:220px; animation:floatSlow 6.5s ease-in-out infinite 1s;">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10.5px] font-semibold text-white/70">Risk Overview</span>
+            <span class="text-[9px] text-white/35">9 components</span>
+          </div>
+          <div class="text-[20px] font-extrabold text-white mb-2">15 <span class="text-[11px] font-semibold text-white/40">failure modes</span></div>
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-[10px]"><span class="text-white/55">Cable & Strain Relief</span><span class="font-bold text-white/80">RPN 120</span></div>
+            <div class="flex items-center justify-between text-[10px]"><span class="text-white/55">Sheath / Sterilization</span><span class="font-bold text-white/80">RPN 96</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative">
+        <div class="tile mb-4" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));width:38px;height:38px;font-size:13px;"><svg viewBox="0 0 24 24" width="62%" height="62%" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.4l7.2 2.6v5.6c0 5.3-3.1 9.9-7.2 11.4-4.1-1.5-7.2-6.1-7.2-11.4V5l7.2-2.6z" stroke-width="1.7"/><path d="M6.6 13.1h2.3l1.3-3.3 2 6.3 1.5-4.3.9 1.3h3" stroke-width="1.5"/></svg></div>
+        <div id="loginSlideTitle" class="font-display text-[22px] text-white leading-tight mb-2" style="min-height:58px;">See Every Risk Before<br>It Becomes One</div>
+        <div id="loginSlideSub" class="text-[12px] text-white/50 leading-relaxed max-w-[320px]" style="min-height:48px;">MedRisk Lite gives you a live command center for ultrasound-probe risk — RPN scoring, ALARP classification and compliance tracking, all in one place.</div>
+        <div id="loginDots" class="flex items-center gap-1.5 mt-5"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="onboardingOverlay" class="fixed inset-0 z-[100] items-center justify-center p-4" style="background:rgba(10,14,22,.72);display:none;">
+  <div class="p-8 w-full max-w-md text-white" style="background:#131a2a; border:1px solid rgba(255,255,255,.10); border-radius:16px; box-shadow:0 20px 40px -18px rgba(0,0,0,.6);">
+    <div class="font-bold text-[15px] mb-1 text-white">Quick setup</div>
+    <div class="text-[11.5px] text-white/45 mb-4">A few quick details before you start — this helps whoever's reviewing this tool understand how it's being used.</div>
+    <label class="text-[11.5px] font-semibold block mb-1 text-white/70">Company / product you're evaluating this for</label>
+    <input id="obCompany" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[12.5px] w-full mb-3 placeholder-white/25" placeholder="e.g. XYZ Diagnostics — Portable Ultrasound Probe">
+    <label class="text-[11.5px] font-semibold block mb-1 text-white/70">Any errors or issues you've run into? (optional)</label>
+    <textarea id="obErrors" rows="2" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[12.5px] w-full mb-3 placeholder-white/25" placeholder="Optional"></textarea>
+    <label class="text-[11.5px] font-semibold block mb-1 text-white/70">What's the main question you want this tool to answer today?</label>
+    <textarea id="obQuestion" rows="2" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[12.5px] w-full mb-4 placeholder-white/25" placeholder="e.g. What's our highest-risk failure mode?"></textarea>
+    <button id="obSubmit" class="w-full px-4 py-2.5 rounded-lg font-semibold text-[13px]" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;">Start using MedRisk Lite</button>
+    <button id="obSkip" class="w-full text-[11.5px] text-white/40 mt-2 py-1">Skip for now</button>
+  </div>
+</div>
+
+<script>
+if(typeof Chart !== 'undefined'){
+  Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = '#8b93a7';
+}
+/* ============================= DATA ============================= */
+const COMPONENTS = [
+ {id:'TA', name:'Transducer / Piezoelectric Array', desc:'Converts electrical pulses to ultrasound waves and back; core imaging element.', color:'#60a5fa'},
+ {id:'AL', name:'Acoustic Lens & Matching Layer', desc:'Focuses the beam and couples energy into tissue; direct patient-contact surface.', color:'#34d399'},
+ {id:'CB', name:'Cable & Strain Relief', desc:'Carries signal and power between probe head and system; flexes with every use.', color:'#f59e0b'},
+ {id:'CN', name:'Connector Assembly', desc:'Mechanical / electrical interface to the ultrasound console or docking base.', color:'#fb7185'},
+ {id:'HS', name:'Housing & Mechanical Seal', desc:'Outer shell providing IP-rated protection against fluid ingress and impact.', color:'#a78bfa'},
+ {id:'PW', name:'Power Supply / Battery', desc:'Powers the wireless / portable probe electronics.', color:'#fb923c'},
+ {id:'EL', name:'Internal Electronics / PCB', desc:'Beamforming, signal processing, and wireless transmission circuitry.', color:'#2dd4bf'},
+ {id:'UI', name:'User Interface / Companion App', desc:'Touch display, exam presets, calipers, and on-device or paired-app software.', color:'#f472b6'},
+ {id:'SH', name:'Protective Sheath / Sterilization Interface', desc:'Single-use barrier and disinfection-compatible surfaces for infection control.', color:'#94a3b8'}
+];
+const COMP = id => COMPONENTS.find(c=>c.id===id);
+
+const DEFAULT_FAILURE_MODES = [
+ {id:1, componentId:'TA', mode:'Piezoelectric crystal delamination from backing layer', effect:'Dead zones / loss of image in part of the scan field; risk of missed diagnostic findings', cause:'Repeated thermal cycling during use and high-level disinfection; adhesive fatigue over probe lifetime', standard:'IEC 60601-1', S:7,O:3,D:5, mitigation:'Add a thermal-cycling check to incoming QC; scheduled 6-month acoustic performance test against a tissue-mimicking phantom.'},
+ {id:2, componentId:'AL', mode:'Acoustic lens crack or surface wear', effect:'Image artifacts, poor acoustic coupling, and a breach in the disinfectable surface', cause:'Physical abrasion and repeated chemical disinfection cycles', standard:'ISO 14971', S:6,O:4,D:3, mitigation:'Visual lens inspection before every shift; replace probe at first sign of surface crazing.'},
+ {id:3, componentId:'AL', mode:'Matching-layer bond failure', effect:'Reduced sensitivity and image resolution loss', cause:'Adhesive degradation from age and moisture exposure', standard:'ISO 14971', S:6,O:2,D:6, mitigation:'Add bond-line inspection to the periodic preventive-maintenance checklist.'},
+ {id:4, componentId:'CB', mode:'Internal cable wire fracture near strain relief', effect:'Intermittent or total loss of image signal, often mid-procedure', cause:'Repetitive flex fatigue at the strain-relief transition point', standard:'IEC 60601-1', S:6,O:5,D:4, mitigation:'Redesign strain-relief geometry per IEC 60601-1 cl.15; add a firmware cable-continuity self-test at power-on.'},
+ {id:5, componentId:'CN', mode:'Connector pin corrosion / oxidation', effect:'Signal noise or intermittent connection to the console', cause:'Humidity exposure and inadequate drying after cleaning', standard:'IEC 60601-1', S:4,O:4,D:4, mitigation:'Specify gold-plated contact pins; document dry-storage requirement in the IFU.'},
+ {id:6, componentId:'HS', mode:'Housing crack or seal breach', effect:'Fluid ingress leading to an electrical-leakage hazard for patient or operator', cause:'Impact damage, or seal aging beyond its rated disinfection-cycle count', standard:'IEC 60601-1', S:9,O:2,D:5, mitigation:'Pre-use IP-rating leak test; tie seal replacement to a tracked disinfection-cycle counter.'},
+ {id:7, componentId:'HS', mode:'Accidental drop / mechanical shock damage', effect:'Internal component misalignment and acoustic performance loss', cause:'Handling stress in busy point-of-care and rural outreach settings', standard:'IEC 60601-1', S:5,O:5,D:3, mitigation:'Issue a drop-rated protective sleeve; run a post-drop functional checklist before reuse.'},
+ {id:8, componentId:'PW', mode:'Battery swelling or overheating', effect:'Burn / fire hazard; probe rendered unusable', cause:'Charge-cycle degradation and use of non-validated chargers', standard:'IEC 60601-1', S:8,O:2,D:4, mitigation:'Add battery health monitoring in firmware; restrict charging to validated adapters only.'},
+ {id:9, componentId:'EL', mode:'PCB / solder joint failure', effect:'Complete loss of device function, no image output', cause:'Vibration during transport and thermal stress over device life', standard:'IEC 60601-1', S:6,O:3,D:5, mitigation:'Apply conformal coating to the PCB; issue a vibration-dampened transport case.'},
+ {id:10, componentId:'UI', mode:'Incorrect exam-mode / preset selection', effect:'Wrong imaging parameters (e.g. acoustic output / TI-MI) applied; misdiagnosis risk', cause:'Ambiguous menu design combined with time pressure in busy clinics', standard:'IEC 62366-1', S:6,O:4,D:5, mitigation:'Add a mode-confirmation dialog and a persistent on-screen safety-index display; run an operator training module.'},
+ {id:11, componentId:'UI', mode:'On-screen caliper / measurement calibration drift', effect:'Inaccurate biometry measurements (e.g. gestational age, organ size)', cause:'Software / display calibration drifts gradually and is rarely rechecked', standard:'IEC 62366-1', S:7,O:3,D:6, mitigation:'Automated daily calibration self-check against a reference phantom; flag drift beyond 2%.'},
+ {id:12, componentId:'UI', mode:'Software freeze / lockup mid-scan', effect:'Workflow disruption; possible loss of a critical real-time finding', cause:'Memory leak during extended scanning sessions', standard:'IEC 62366-1', S:4,O:4,D:3, mitigation:'Auto-save the last 30-second cine loop; add a scheduled firmware watchdog restart.'},
+ {id:13, componentId:'SH', mode:'Protective sheath / probe-cover breach', effect:'Cross-contamination risk between patients', cause:'Sheath puncture, or improper application during semi-invasive exams', standard:'ISO 14971', S:8,O:3,D:4, mitigation:'Run a pre-use sheath integrity check; use a two-person application protocol for higher-risk exams.'},
+ {id:14, componentId:'SH', mode:'Disinfectant chemical incompatibility', effect:'Accelerated degradation of housing / lens seals, creating a leak path over time', cause:'Use of non-validated high-level disinfectants in resource-limited settings', standard:'ISO 14971', S:5,O:4,D:5, mitigation:'Validate materials against the AAMI TIR12 compatible-disinfectant list; restrict the IFU to approved agents only.'},
+ {id:15, componentId:'UI', mode:'Display brightness / contrast degradation over probe life', effect:'Subtle findings missed under bright ambient light (e.g. outdoor rural health camps)', cause:'Display panel aging', standard:'ISO 14971', S:3,O:5,D:3, mitigation:'Run an annual display-luminance check; add ambient-light usage guidance to the IFU.'}
+];
+
+const AI_SUGGESTIONS = {
+ TA: ['Crystal array micro-fracture under repeated impact loading','Cross-talk between adjacent array elements'],
+ AL: ['Air-gap formation between lens and array causing coupling loss'],
+ CB: ['Cable jacket abrasion exposing internal shielding'],
+ CN: ['Connector housing thread wear from repeated docking cycles'],
+ HS: ['UV / sunlight-induced housing polymer embrittlement (outdoor rural camps)'],
+ PW: ['Deep-discharge cycling causing accelerated battery capacity loss'],
+ EL: ['EMI-induced beamforming noise near other hospital equipment'],
+ UI: ['Touch-screen unresponsive in high-humidity field conditions'],
+ SH: ['Sheath adhesive residue affecting acoustic coupling after removal']
+};
+
+const DEFAULT_COMPLIANCE = [
+ {id:'c4', clause:'ISO 14971:2019 — Cl.4', title:'Risk Management Process', mapped:'Device Library + overall platform setup', status:'complete', evidence:[]},
+ {id:'c5', clause:'ISO 14971:2019 — Cl.5', title:'Risk Analysis', mapped:'FMEA Workspace (component & failure-mode identification)', status:'complete', evidence:[]},
+ {id:'c6', clause:'ISO 14971:2019 — Cl.6', title:'Risk Evaluation', mapped:'S-O-D scoring + ALARP auto-classification', status:'complete', evidence:[]},
+ {id:'c7', clause:'ISO 14971:2019 — Cl.7', title:'Risk Control', mapped:'Risk Register mitigation notes', status:'partial', evidence:[]},
+ {id:'c8', clause:'ISO 14971:2019 — Cl.8', title:'Overall Residual Risk Evaluation', mapped:'Analytics & heatmap review', status:'partial', evidence:[]},
+ {id:'c9', clause:'ISO 14971:2019 — Cl.9', title:'Risk Management Review', mapped:'Compliance sign-off', status:'pending', evidence:[]},
+ {id:'c10', clause:'ISO 14971:2019 — Cl.10', title:'Production & Post-Production Info', mapped:'Field deployment monitoring (roadmap)', status:'pending', evidence:[]}
+];
+
+const STATUS_WEIGHT = {complete:100, partial:50, pending:0};
+
+const STANDARDS = [
+ {code:'ISO 14971:2019', title:'Risk Management', color:'#0891b2', text:'Core framework — RPN logic, the ALARP principle, risk-acceptability criteria and the risk-file structure are all derived from this standard.'},
+ {code:'IEC 60601-1', title:'Electrical & Mechanical Safety', color:'#d97706', text:"Informs failure-mode categories for the probe's electrical/mechanical subsystem — housing seal, connector, battery and PCB faults are identified under this standard's framework."},
+ {code:'IEC 62366-1', title:'Usability Engineering', color:'#7c3aed', text:"The interface follows usability engineering principles, and probe interface errors (incorrect mode selection, caliper/display misreading) are captured as human-factor failure modes."},
+ {code:'ISO 13485:2016', title:'Quality Management', color:'#059669', text:'Documentation and the risk-file structure align with QMS record-keeping requirements, keeping output submission-ready.'}
+];
+
+const QUICK_PROMPTS = [
+ 'What is the highest-risk failure mode right now?',
+ 'Explain RPN and ALARP in simple terms.',
+ 'Summarize the current compliance status.',
+ 'Draft a mitigation plan for the housing seal failure.',
+ 'What does IEC 62366-1 usability engineering cover?'
+];
+
+/* ============================= CLOUD (Supabase) ============================= */
+const SUPABASE_URL = 'https://stavoqrlgztxwwiamyue.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YXZvcXJsZ3p0eHd3aWFteXVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxOTg0MzEsImV4cCI6MjEwMTc3NDQzMX0.Y1icM9xBArtkihi43TH2WlaTas5TPnMuNj9MkRfWuD8';
+let sb = null;
+let cloudConnected = false;
+try{
+  if(typeof supabase !== 'undefined'){
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+}catch(e){ sb = null; }
+
+try{
+  if(typeof pdfjsLib !== 'undefined'){
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+}catch(e){ /* PDF analyzer will report unavailable at use time */ }
+
+const CONTACT_INFO = { email: 'vigneshramprabha2006@gmail.com', phone: '' };
+
+/* ============================= STATE ============================= */
+const STORE_KEY = 'medriskLiteState_v2';
+const APIKEY_STORE = 'medriskLiteApiKey_v1';
+function defaultState(){
+  return {
+    failureModes: JSON.parse(JSON.stringify(DEFAULT_FAILURE_MODES)).map(f => Object.assign(f, {
+      createdAt: Date.now()-1000*60*60*24*10,
+      updatedAt: Date.now()-1000*60*60*24*7
+    })),
+    compliance: JSON.parse(JSON.stringify(DEFAULT_COMPLIANCE)),
+    settings: {alarpFrom:50, unacceptableFrom:100, chatModel:'claude-sonnet-5'},
+    auditLog: [
+      {ts: Date.now()-1000*60*60*24*10, text:'Ultrasound probe FMEA data set initialized with 9 components.'},
+      {ts: Date.now()-1000*60*60*24*7, text:'15 failure modes documented across all components; S-O-D scoring completed.'},
+      {ts: Date.now()-1000*60*60*24*2, text:'AI Assistant module connected — ready for chat, file, and voice input.'}
+    ],
+    nextId: 16,
+    lastView: 'dashboard',
+    sheathApplied: true,
+    onboardingResponses: [],
+    snapshots: []
+  };
+}
+let state = loadState();
+const apiKeyStored = localStorage.getItem(APIKEY_STORE) || '';
+let apiKey = apiKeyStored;
+let chatModel = state.settings.chatModel || 'claude-sonnet-5';
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    const def = defaultState();
+    const merged = Object.assign(def, parsed, {settings: Object.assign(def.settings, parsed.settings||{})});
+    (merged.failureModes||[]).forEach(f => {
+      if(!f.createdAt) f.createdAt = Date.now()-1000*60*60*24*10;
+      if(!f.updatedAt) f.updatedAt = f.createdAt;
+    });
+    return merged;
+  }catch(e){ return defaultState(); }
+}
+let cloudSaveTimer = null;
+function saveState(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  const el = document.getElementById('save-indicator');
+  if(el){ el.textContent = 'Saved locally ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+  if(cloudConnected && sb){
+    if(cloudSaveTimer) clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(syncStateToCloud, 600);
+  }
+}
+async function syncStateToCloud(){
+  if(!sb) return;
+  const el = document.getElementById('save-indicator');
+  try{
+    const { error } = await sb.from('app_state').upsert({ id: 1, data: state, updated_at: new Date().toISOString() });
+    if(error) throw error;
+    if(el) el.textContent = 'Synced to cloud ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    if(el) el.textContent = 'Saved locally (cloud sync failed)';
+    showToast('Could not sync to the cloud database - your changes are still saved in this browser.', true);
+  }
+}
+function log(text){
+  state.auditLog.unshift({ts:Date.now(), text});
+  if(state.auditLog.length > 50) state.auditLog = state.auditLog.slice(0, 50);
+  saveState();
+}
+
+/* ============================= HELPERS ============================= */
+function rpn(fm){ return fm.S * fm.O * fm.D; }
+function classify(r){
+  if(r >= state.settings.unacceptableFrom) return 'Unacceptable';
+  if(r >= state.settings.alarpFrom) return 'ALARP';
+  return 'Acceptable';
+}
+function badgeHtml(band){
+  const cls = band==='Unacceptable'?'badge-unacceptable':band==='ALARP'?'badge-alarp':'badge-acceptable';
+  return `<span class="badge ${cls}">${band}</span>`;
+}
+function bandColor(band){ return band==='Unacceptable'?'#fb7185':band==='ALARP'?'#f59e0b':'#34d399'; }
+function fmt(ts){ return new Date(ts).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================= RESILIENCE (toasts + global error capture) ============================= */
+function showToast(msg, isError){
+  const wrap = document.getElementById('toastWrap');
+  if(!wrap) return;
+  const el = document.createElement('div');
+  el.className = 'toast' + (isError ? ' err' : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{
+    el.style.transition = 'opacity .3s';
+    el.style.opacity = '0';
+    setTimeout(()=>el.remove(), 300);
+  }, 4500);
+}
+let globalErrorShown = false;
+window.addEventListener('error', function(){
+  if(globalErrorShown) return; globalErrorShown = true;
+  showToast('Something did not load correctly - check your internet connection and reload the page.', true);
+});
+window.addEventListener('unhandledrejection', function(){
+  if(globalErrorShown) return; globalErrorShown = true;
+  showToast('Something did not load correctly - check your internet connection and reload the page.', true);
+});
+
+/* ============================= NAV ============================= */
+const VIEWS = [
+ {id:'dashboard', label:'Dashboard', sub:'Overview and risk summary', color:'#0891b2', tile:'DB'},
+ {id:'library', label:'Device Library', sub:'Pre-loaded device catalogue', color:'#059669', tile:'DL'},
+ {id:'workspace', label:'FMEA Workspace', sub:'Component, failure mode and S-O-D scoring', color:'#e11d48', tile:'FW'},
+ {id:'register', label:'Risk Register', sub:'Master list of identified risks', color:'#7c3aed', tile:'RR'},
+ {id:'analytics', label:'Analytics', sub:'Heatmaps, RPN charts and distributions', color:'#2563eb', tile:'AN'},
+ {id:'compliance', label:'Compliance', sub:'Live ISO 14971:2019 clause tracker', color:'#db2777', tile:'CO'},
+ {id:'assistant', label:'AI Assistant', sub:'Chat, attach files or photos, or speak', color:'#9333ea', tile:'AI'},
+ {id:'report', label:'Report Generator', sub:'One-click regulatory-ready PDF export', color:'#d97706', tile:'RG'},
+ {id:'settings', label:'Settings', sub:'Scoring, AI key and data management', color:'#475569', tile:'ST'}
+];
+
+function buildNav(){
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = VIEWS.map(v => `
+    <button data-view="${v.id}" class="sidebar-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-[13px] text-white/80">
+      <span class="tile" style="background:${v.color};">${v.tile}</span>
+      <span>${v.label}</span>
+    </button>`).join('');
+  nav.querySelectorAll('button').forEach(b => b.addEventListener('click', () => navigate(b.dataset.view)));
+}
+function isDarkMode(){ return document.documentElement.classList.contains('dark'); }
+function toggleTheme(){
+  const dark = document.documentElement.classList.toggle('dark');
+  try{ localStorage.setItem('medrisklite-theme', dark ? 'dark' : 'light'); }catch(e){}
+  if(state.lastView) navigate(state.lastView);
+}
+function navigate(id){
+  state.lastView = id; saveState();
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.view===id));
+  const v = VIEWS.find(x=>x.id===id);
+  document.getElementById('page-title').textContent = v.label;
+  document.getElementById('page-sub').textContent = v.sub;
+  const root = document.getElementById('view-root');
+  root.innerHTML = '';
+  root.classList.remove('fade-in'); void root.offsetWidth; root.classList.add('fade-in');
+  ({dashboard:renderDashboard, library:renderLibrary, workspace:renderWorkspace,
+    register:renderRegister, analytics:renderAnalytics, compliance:renderCompliance,
+    assistant:renderAssistant, report:renderReport, settings:renderSettings})[id]();
+}
+
+/* ============================= DASHBOARD ============================= */
+function renderDashboard(){
+  const fms = state.failureModes;
+  const bands = {Acceptable:0, ALARP:0, Unacceptable:0};
+  fms.forEach(f => bands[classify(rpn(f))]++);
+  const avg = Math.round(fms.reduce((a,f)=>a+rpn(f),0)/fms.length);
+  const top = [...fms].sort((a,b)=>rpn(b)-rpn(a)).slice(0,5);
+  const compScore = Math.round(state.compliance.reduce((a,c)=>a+STATUS_WEIGHT[c.status],0)/state.compliance.length);
+
+  document.getElementById('view-root').innerHTML = `
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      ${statCard('Failure Modes Documented', fms.length, '15 in dataset', '#60a5fa', '#')}
+      ${statCard('Average RPN', avg, avg>=50?'Needs attention':'Within range', '#f59e0b', 'Σ')}
+      ${statCard('Highest Risk RPN', rpn(top[0]), classify(rpn(top[0])), '#fb7185', '⚠')}
+      ${statCard('ISO 14971 Compliance', compScore+'%', 'Live score', '#34d399', '✓')}
+    </div>
+    <div class="grid grid-cols-3 gap-5">
+      <div class="card p-5 col-span-1">
+        <h3 class="font-bold mb-3 text-[13.5px]">ALARP Risk Breakdown</h3>
+        <canvas id="dashDonut" height="190"></canvas>
+        <div class="mt-3 space-y-1.5 text-[12.5px]">
+          <div class="flex justify-between"><span>Acceptable</span><b>${bands.Acceptable}</b></div>
+          <div class="flex justify-between"><span>ALARP</span><b>${bands.ALARP}</b></div>
+          <div class="flex justify-between"><span>Unacceptable</span><b>${bands.Unacceptable}</b></div>
+        </div>
+      </div>
+      <div class="card p-5 col-span-1">
+        <h3 class="font-bold mb-3 text-[13.5px]">Top 5 Highest-Risk Failure Modes</h3>
+        <div class="space-y-2.5">
+          ${top.map((f,i)=>`
+            <div class="flex items-start gap-2.5 pb-2.5 ${i<4?'border-b border-white/8':''}">
+              <span class="tile shrink-0" style="background:${bandColor(classify(rpn(f)))};color:#0a0e16;font-size:11px;">${rpn(f)}</span>
+              <div class="min-w-0">
+                <div class="text-[12.5px] font-semibold truncate">${esc(f.mode)}</div>
+                <div class="text-[11px] text-white/45">${esc(COMP(f.componentId).name)}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="card p-5 col-span-1">
+        <h3 class="font-bold mb-3 text-[13.5px]">Recent Activity</h3>
+        <div class="space-y-3 scrollfade" style="max-height:280px;">
+          ${state.auditLog.slice(0,8).map(a=>`
+            <div class="text-[12px]">
+              <div class="text-white/35 text-[10.5px]">${fmt(a.ts)}</div>
+              <div class="text-white/80">${esc(a.text)}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card p-5 mt-5" style="background:linear-gradient(135deg, rgba(139,92,246,.14), rgba(34,211,238,.08)); border-color:rgba(139,92,246,.25);">
+      <div class="flex items-start gap-3">
+        <span class="tile shrink-0" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));">★</span>
+        <div>
+          <div class="font-bold text-[13.5px] mb-1">Built for Low-Resource Point-of-Care Settings</div>
+          <div class="text-[12.5px] text-white/70 leading-relaxed">MedRisk Lite is deliberately focused on the portable ultrasound probe — the diagnostic-imaging device most likely to be deployed at low-resource, point-of-care settings across India, and a device category often left out of affordable FMEA tooling. More devices are on the roadmap — see the Device Library tab.</div>
+        </div>
+      </div>
+    </div>`;
+
+  try{
+    if(typeof Chart === 'undefined') throw new Error('chart-lib-missing');
+    new Chart(document.getElementById('dashDonut'), {
+      type:'doughnut',
+      data:{labels:['Acceptable','ALARP','Unacceptable'], datasets:[{data:[bands.Acceptable,bands.ALARP,bands.Unacceptable], backgroundColor:['#34d399','#f59e0b','#fb7185'], borderWidth:0}]},
+      options:{plugins:{legend:{display:false}}, cutout:'65%'}
+    });
+  }catch(e){
+    const c = document.getElementById('dashDonut');
+    if(c) c.outerHTML = '<div class="text-[11.5px] text-white/40 py-8 text-center">Chart could not load - check your internet connection.</div>';
+  }
+}
+function statCard(label, value, sub, color, icon){
+  return `<div class="card p-4">
+    <div class="flex items-center justify-between mb-3">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-[14px] font-bold" style="background:${color}1a;color:${color};">${icon||'●'}</div>
+      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:${color}14;color:${color};">${sub}</span>
+    </div>
+    <div class="font-display text-[24px] leading-none" style="color:var(--ink-1);">${value}</div>
+    <div class="text-[12px] font-semibold mt-1.5" style="color:var(--ink-2);">${label}</div>
+  </div>`;
+}
+
+/* ============================= DEVICE LIBRARY ============================= */
+function renderLibrary(){
+  const future = [
+    {name:'ECG Monitor', note:'Electrocardiography — 12-lead & portable'},
+    {name:'Mechanical Ventilator', note:'ICU / transport respiratory support'},
+    {name:'Automated External Defibrillator', note:'Emergency cardiac response'}
+  ];
+  document.getElementById('view-root').innerHTML = `
+    <div class="card p-5 mb-5" style="border-color:rgba(34,211,238,.35);">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="tile" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;width:44px;height:44px;font-size:13px;">US</span>
+          <div>
+            <div class="font-bold text-[15px]">Portable Ultrasound Probe</div>
+            <div class="text-[12px] text-white/45">Diagnostic imaging · 9 components · 15 failure modes</div>
+          </div>
+        </div>
+        <button onclick="navigate('workspace')" class="px-4 py-2 rounded-lg text-[12.5px] font-semibold" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;">Open FMEA Workspace →</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mt-4">
+        ${COMPONENTS.map(c=>`
+          <div class="rounded-lg p-3" style="background:rgba(255,255,255,.04);">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${c.color};"></span>
+              <span class="text-[12px] font-bold">${c.name}</span>
+            </div>
+            <div class="text-[11px] text-white/50">${c.desc}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="text-[12.5px] font-bold text-white/45 mb-2 uppercase tracking-wide">More Devices — Coming Soon</div>
+    <div class="grid grid-cols-3 gap-4">
+      ${future.map(d=>`
+        <div class="card p-4 opacity-60 relative">
+          <span class="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:var(--surface-2);color:var(--ink-3);border:1px solid var(--border);">COMING SOON</span>
+          <div class="tile mb-3" style="background:var(--surface-2);color:var(--ink-4);">--</div>
+          <div class="font-bold text-[13px]">${d.name}</div>
+          <div class="text-[11.5px] text-white/45 mt-1">${d.note}</div>
+          <div class="text-[11px] text-white/35 mt-2 italic">Not yet available in this build</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ============================= FMEA WORKSPACE ============================= */
+let workspaceFilter = null;
+function renderWorkspace(){
+  document.getElementById('view-root').innerHTML = `
+    <div class="grid grid-cols-3 gap-5">
+      <div class="card p-5 col-span-1">
+        <h3 class="font-bold mb-1 text-[13.5px]">Interactive Probe Mapping</h3>
+        <p class="text-[11px] text-white/45 mb-3">Click a labelled component to filter its failure modes.</p>
+        ${probeSvg()}
+        <div class="mt-3 flex items-center justify-between text-[12px]">
+          <span class="font-semibold text-white/80">Protective sheath applied</span>
+          <button id="sheathToggle" class="px-3 py-1 rounded-full text-[11px] font-bold" style="background:${state.sheathApplied?'rgba(52,211,153,.14)':'rgba(251,113,133,.14)'};color:${state.sheathApplied?'#34d399':'#fb7185'};">${state.sheathApplied?'YES':'NO'}</button>
+        </div>
+        ${workspaceFilter ? `<button id="clearFilter" class="mt-3 w-full text-[11.5px] font-semibold py-1.5 rounded-lg bg-white/5 hover:bg-white/10">Clear filter (${COMP(workspaceFilter).name})</button>` : ''}
+        <div class="mt-4 pt-4 border-t border-white/10">
+          <h4 class="font-bold text-[12.5px] mb-2 flex items-center gap-1.5"><span class="tile" style="width:20px;height:20px;font-size:9px;background:var(--brand-2);">+</span> Suggest Failure Modes</h4>
+          <p class="text-[10.5px] text-white/45 mb-2">Curated suggestions per component from a built-in knowledge base, for team review.</p>
+          <select id="aiComponentSelect" class="w-full text-[12px] bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 mb-2">
+            ${COMPONENTS.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+          </select>
+          <button id="aiSuggestBtn" class="w-full text-[12px] font-semibold py-1.5 rounded-lg" style="background:var(--brand-2);">Suggest Failure Modes</button>
+          <div id="aiSuggestions" class="mt-2 space-y-1.5"></div>
+        </div>
+      </div>
+      <div class="col-span-2" id="fmeaList"></div>
+    </div>`;
+  renderFmeaList();
+  document.querySelectorAll('.hotspot').forEach(h => h.addEventListener('click', ()=>{ workspaceFilter = h.dataset.comp; renderWorkspace(); }));
+  const clr = document.getElementById('clearFilter'); if(clr) clr.addEventListener('click', ()=>{ workspaceFilter=null; renderWorkspace(); });
+  document.getElementById('sheathToggle').addEventListener('click', ()=>{ state.sheathApplied=!state.sheathApplied; saveState(); renderWorkspace(); });
+  document.getElementById('aiSuggestBtn').addEventListener('click', ()=>{
+    const cid = document.getElementById('aiComponentSelect').value;
+    const box = document.getElementById('aiSuggestions');
+    const suggestions = AI_SUGGESTIONS[cid] || [];
+    box.innerHTML = suggestions.map((s,i)=>`
+      <div class="text-[11px] p-2 rounded-lg" style="background:rgba(139,92,246,.10);">
+        <div class="mb-1 text-white/80">${esc(s)}</div>
+        <button data-add="${cid}::${i}" class="text-[10.5px] font-bold" style="color:var(--brand-2);">+ Add to FMEA Workspace</button>
+      </div>`).join('') || `<div class="text-[11px] text-white/40">No further suggestions — this component is well covered.</div>`;
+    box.querySelectorAll('[data-add]').forEach(btn => btn.addEventListener('click', ()=>{
+      const [cid2, idx] = btn.dataset.add.split('::');
+      const text = AI_SUGGESTIONS[cid2][+idx];
+      state.failureModes.push({id:state.nextId++, componentId:cid2, mode:text, effect:'Pending team review', cause:'Pending team review', standard:'Suggested entry', S:5,O:5,D:5, mitigation:'Pending team review — suggested entry requires validation before sign-off.', createdAt:Date.now(), updatedAt:Date.now()});
+      log(`Suggested entry "${text}" added to ${COMP(cid2).name} — pending review.`);
+      renderWorkspace();
+    }));
+  });
+}
+function probeSvg(){
+  const hs = (cx,cy,id) => `<circle class="hotspot" data-comp="${id}" cx="${cx}" cy="${cy}" r="9" fill="${COMP(id).color}" stroke="#0a0e16" stroke-width="2"><title>${COMP(id).name}</title></circle>`;
+  return `<svg viewBox="0 0 380 170" class="w-full">
+    <polyline points="8,150 55,150 85,120 115,95" fill="none" stroke="#4b5570" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="0" y="140" width="26" height="20" rx="4" fill="#334155"/>
+    <rect x="115" y="70" width="150" height="55" rx="18" fill="#1b2338" stroke="#2a3350"/>
+    <rect x="265" y="82" width="55" height="30" rx="12" fill="#212a42" stroke="#2a3350"/>
+    <ellipse cx="332" cy="97" rx="10" ry="16" fill="#1b2338" stroke="#2a3350"/>
+    ${state.sheathApplied ? '<rect x="255" y="75" width="90" height="45" rx="16" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3"/>' : ''}
+    ${hs(26,150,'CN')}
+    ${hs(150,97,'PW')}
+    ${hs(195,97,'EL')}
+    ${hs(235,97,'HS')}
+    ${hs(70,133,'CB')}
+    ${hs(300,80,'SH')}
+    ${hs(332,90,'TA')}
+    ${hs(332,110,'AL')}
+    <text x="10" y="30" font-size="10" fill="#8b93a7">UI / Companion App — paired display, click list below</text>
+    <circle class="hotspot" data-comp="UI" cx="15" cy="45" r="9" fill="${COMP('UI').color}" stroke="#0a0e16" stroke-width="2"><title>User Interface / Companion App</title></circle>
+  </svg>`;
+}
+function renderFmeaList(){
+  const list = workspaceFilter ? state.failureModes.filter(f=>f.componentId===workspaceFilter) : state.failureModes;
+  document.getElementById('fmeaList').innerHTML = `<div class="space-y-3">${list.map(fmCard).join('')}</div>`;
+  list.forEach(f=>{
+    ['S','O','D'].forEach(k=>{
+      const sel = document.getElementById(`${k}-${f.id}`);
+      sel.addEventListener('change', ()=>{
+        const before = rpn(f);
+        f[k] = +sel.value;
+        f.updatedAt = Date.now();
+        const after = rpn(f);
+        log(`${f.mode.slice(0,40)}… — ${k} changed to ${f[k]} (RPN ${before}→${after}, now ${classify(after)}).`);
+        renderFmeaList();
+      });
+    });
+  });
+}
+function fmCard(f){
+  const r = rpn(f), band = classify(r), c = COMP(f.componentId);
+  const scoreSelect = (k,val) => `<select id="${k}-${f.id}" class="bg-white/5 border border-white/10 rounded px-1.5 py-1 text-[12px] font-semibold">
+    ${Array.from({length:10},(_,i)=>i+1).map(n=>`<option value="${n}" ${n===val?'selected':''}>${n}</option>`).join('')}
+  </select>`;
+  return `<div class="card p-4">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-2 h-2 rounded-full shrink-0" style="background:${c.color};"></span>
+          <span class="text-[10.5px] font-bold text-white/45 uppercase tracking-wide">${c.name}</span>
+          <span class="text-[10px] text-white/30">· ${f.standard}</span>
+        </div>
+        <div class="font-bold text-[13.5px]">${esc(f.mode)}</div>
+      </div>
+      ${badgeHtml(band)}
+    </div>
+    <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-[11.5px] mt-2.5 text-white/60">
+      <div><b class="text-white/85">Effect:</b> ${esc(f.effect)}</div>
+      <div><b class="text-white/85">Cause:</b> ${esc(f.cause)}</div>
+    </div>
+    <div class="text-[11.5px] text-white/60 mt-1"><b class="text-white/85">Mitigation:</b> ${esc(f.mitigation)}</div>
+    <div class="flex items-center gap-4 mt-3 pt-3 border-t border-white/10">
+      <div class="flex items-center gap-1.5 text-[11px] font-semibold text-white/50">S ${scoreSelect('S',f.S)}</div>
+      <div class="flex items-center gap-1.5 text-[11px] font-semibold text-white/50">O ${scoreSelect('O',f.O)}</div>
+      <div class="flex items-center gap-1.5 text-[11px] font-semibold text-white/50">D ${scoreSelect('D',f.D)}</div>
+      <div class="ml-auto text-[13px] font-extrabold" style="color:${bandColor(band)};">RPN = ${r}</div>
+    </div>
+    <div class="flex items-center gap-3 mt-2 text-[10px] text-white/35">
+      <span>Created ${fmt(f.createdAt)}</span>
+      <span>·</span>
+      <span>Last updated ${fmt(f.updatedAt)}</span>
+    </div>
+  </div>`;
+}
+
+/* ============================= RISK REGISTER ============================= */
+let registerSort = {key:'rpn', dir:-1}, registerFilter='All', registerSearch='';
+function renderRegister(){
+  document.getElementById('view-root').innerHTML = `
+    <div class="card p-4 mb-4 flex items-center gap-3">
+      <input id="regSearch" placeholder="Search failure mode or component…" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[12.5px] w-72 placeholder-white/30" value="${esc(registerSearch)}">
+      <div class="flex gap-1.5 ml-auto">
+        ${['All','Acceptable','ALARP','Unacceptable'].map(b=>`<button data-filter="${b}" class="px-3 py-1.5 rounded-full text-[11.5px] font-semibold" style="background:${registerFilter===b?'linear-gradient(135deg,var(--brand),var(--brand-2))':'var(--surface-2)'};color:${registerFilter===b?'#06121a':'var(--ink-2)'};border:1px solid ${registerFilter===b?'transparent':'var(--border)'};">${b}</button>`).join('')}
+      </div>
+    </div>
+    <div class="card overflow-hidden">
+      <table class="w-full text-[12px]">
+        <thead style="background:var(--surface-2);color:var(--ink-2);">
+          <tr>
+            <th class="sortable text-left px-3 py-2.5" data-key="id">#</th>
+            <th class="sortable text-left px-3 py-2.5" data-key="component">Component</th>
+            <th class="text-left px-3 py-2.5">Failure Mode</th>
+            <th class="sortable text-center px-2 py-2.5" data-key="S">S</th>
+            <th class="sortable text-center px-2 py-2.5" data-key="O">O</th>
+            <th class="sortable text-center px-2 py-2.5" data-key="D">D</th>
+            <th class="sortable text-center px-2 py-2.5" data-key="rpn">RPN</th>
+            <th class="text-center px-3 py-2.5">ALARP</th>
+          </tr>
+        </thead>
+        <tbody id="regBody"></tbody>
+      </table>
+    </div>`;
+  document.getElementById('regSearch').addEventListener('input', e=>{ registerSearch=e.target.value; renderRegisterBody(); });
+  document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click', ()=>{ registerFilter=b.dataset.filter; renderRegister(); }));
+  document.querySelectorAll('th.sortable').forEach(th=>th.addEventListener('click', ()=>{
+    const k = th.dataset.key;
+    registerSort.dir = (registerSort.key===k) ? -registerSort.dir : -1;
+    registerSort.key = k;
+    renderRegisterBody();
+  }));
+  renderRegisterBody();
+}
+function renderRegisterBody(){
+  let rows = state.failureModes.map(f=>({f, r:rpn(f), band:classify(rpn(f)), comp:COMP(f.componentId).name}));
+  if(registerFilter!=='All') rows = rows.filter(x=>x.band===registerFilter);
+  if(registerSearch) rows = rows.filter(x=> (x.f.mode+x.comp).toLowerCase().includes(registerSearch.toLowerCase()));
+  rows.sort((a,b)=>{
+    const k=registerSort.key;
+    const va = k==='rpn'?a.r : k==='component'?a.comp : k==='id'?a.f.id : a.f[k];
+    const vb = k==='rpn'?b.r : k==='component'?b.comp : k==='id'?b.f.id : b.f[k];
+    return (va>vb?1:va<vb?-1:0) * registerSort.dir;
+  });
+  document.getElementById('regBody').innerHTML = rows.map(({f,r,band,comp})=>`
+    <tr class="border-t border-white/8 hover:bg-white/[.03]">
+      <td class="px-3 py-2 text-white/35">${f.id}</td>
+      <td class="px-3 py-2 font-semibold">${esc(comp)}</td>
+      <td class="px-3 py-2 text-white/85">${esc(f.mode)}</td>
+      <td class="px-2 py-2 text-center">${f.S}</td>
+      <td class="px-2 py-2 text-center">${f.O}</td>
+      <td class="px-2 py-2 text-center">${f.D}</td>
+      <td class="px-2 py-2 text-center font-extrabold" style="color:${bandColor(band)};">${r}</td>
+      <td class="px-3 py-2 text-center">${badgeHtml(band)}</td>
+    </tr>`).join('') || `<tr><td colspan="8" class="text-center py-8 text-white/35">No matching failure modes.</td></tr>`;
+}
+
+/* ============================= ANALYTICS ============================= */
+let chartRpn;
+function renderAnalytics(){
+  document.getElementById('view-root').innerHTML = `
+    <div class="grid grid-cols-2 gap-5 mb-5">
+      <div class="card p-5"><h3 class="font-bold mb-3 text-[13.5px]">RPN by Failure Mode</h3><canvas id="rpnBar" height="230"></canvas></div>
+      <div class="card p-5"><h3 class="font-bold mb-3 text-[13.5px]">Risk Heatmap — Average RPN by Component</h3><div id="heatGrid"></div></div>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-bold mb-3 text-[13.5px]">Risk History & Audit Trail</h3>
+      <div class="space-y-2 scrollfade">
+        ${state.auditLog.map(a=>`<div class="text-[12px] flex gap-3"><span class="text-white/35 w-36 shrink-0">${fmt(a.ts)}</span><span class="text-white/80">${esc(a.text)}</span></div>`).join('')}
+      </div>
+    </div>
+    ${renderSnapshotsCard()}`;
+  wireSnapshotsCard();
+  const sorted = [...state.failureModes].sort((a,b)=>rpn(b)-rpn(a));
+  try{
+    if(typeof Chart === 'undefined') throw new Error('chart-lib-missing');
+    chartRpn = new Chart(document.getElementById('rpnBar'), {
+      type:'bar',
+      data:{ labels: sorted.map(f=>'#'+f.id),
+        datasets:[{ label:'RPN', data: sorted.map(f=>rpn(f)), backgroundColor: sorted.map(f=>bandColor(classify(rpn(f)))) }] },
+      options:{ plugins:{legend:{display:false}, title:{display:false}}, scales:{y:{beginAtZero:true, ticks:{color:'#8b93a7'}, grid:{color:isDarkMode()?'rgba(255,255,255,.08)':'rgba(15,20,35,.07)'}}, x:{ticks:{color:'#8b93a7'}, grid:{display:false}}} }
+    });
+  }catch(e){
+    const c = document.getElementById('rpnBar');
+    if(c) c.outerHTML = '<div class="text-[11.5px] text-white/40 py-8 text-center">Chart could not load - check your internet connection.</div>';
+  }
+  const grid = COMPONENTS.map(c=>{
+    const items = state.failureModes.filter(f=>f.componentId===c.id);
+    const avg = items.length ? Math.round(items.reduce((a,f)=>a+rpn(f),0)/items.length) : 0;
+    const intensity = Math.min(1, avg/150);
+    const col = `rgba(251,113,133,${0.12+intensity*0.7})`;
+    return `<div class="flex items-center gap-3 py-1.5">
+      <div class="w-40 text-[11px] font-semibold shrink-0 text-white/70">${c.name}</div>
+      <div class="flex-1 h-6 rounded-md flex items-center px-2 text-[11px] font-bold" style="background:${col};color:#fff;">${avg} avg RPN · ${items.length} mode${items.length!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('heatGrid').innerHTML = grid;
+}
+
+/* ============================= RISK SNAPSHOTS ============================= */
+function computeSnapshotStats(fms, compScoreVal){
+  const bands = {Acceptable:0, ALARP:0, Unacceptable:0};
+  fms.forEach(f=>bands[classify(rpn(f))]++);
+  const avg = fms.length ? Math.round(fms.reduce((a,f)=>a+rpn(f),0)/fms.length) : 0;
+  return {avg, bands, count: fms.length, compScore: compScoreVal};
+}
+function saveSnapshot(){
+  const name = prompt('Name this snapshot (e.g. "Pre-mitigation baseline"):', 'Snapshot ' + new Date().toLocaleDateString());
+  if(name === null) return;
+  const compScoreNow = Math.round(state.compliance.reduce((a,c)=>a+STATUS_WEIGHT[c.status],0)/state.compliance.length);
+  const stats = computeSnapshotStats(state.failureModes, compScoreNow);
+  const snap = { id: 'snap_'+Date.now(), name: (name.trim() || 'Untitled snapshot'), ts: Date.now(), stats };
+  if(!state.snapshots) state.snapshots = [];
+  state.snapshots.unshift(snap);
+  if(state.snapshots.length > 20) state.snapshots = state.snapshots.slice(0,20);
+  log('Risk snapshot saved: "' + snap.name + '".');
+  renderAnalytics();
+}
+function deleteSnapshot(id){
+  state.snapshots = (state.snapshots||[]).filter(s=>s.id!==id);
+  log('Risk snapshot deleted.');
+  renderAnalytics();
+}
+function toggleSnapshotCompare(id){
+  const el = document.getElementById('cmp-'+id);
+  if(el) el.classList.toggle('hidden');
+}
+function renderSnapshotsCard(){
+  const snaps = state.snapshots || [];
+  const compScoreNow = Math.round(state.compliance.reduce((a,c)=>a+STATUS_WEIGHT[c.status],0)/state.compliance.length);
+  const nowStats = computeSnapshotStats(state.failureModes, compScoreNow);
+  return `<div class="card p-5 mt-5">
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <h3 class="font-bold text-[13.5px]">Risk Snapshots</h3>
+        <p class="text-[10.5px] text-white/40 mt-0.5">Save a baseline, then compare it to today's data to show risk reduction over time.</p>
+      </div>
+      <button id="saveSnapshotBtn" class="text-[11.5px] font-semibold px-3 py-1.5 rounded-lg shrink-0" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;">+ Save Snapshot</button>
+    </div>
+    ${snaps.length===0 ? '<div class="text-[11.5px] text-white/40">No snapshots yet — save one to track how risk changes over time (e.g. before vs after mitigation).</div>' : snaps.map(s=>{
+      const d = s.stats;
+      const deltaAvg = nowStats.avg - d.avg;
+      const deltaCls = deltaAvg<0?'color:#34d399':deltaAvg>0?'color:#fb7185':'color:#8b93a7';
+      return `<div class="border-t border-white/8 pt-3 mt-3">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-[12.5px] font-semibold truncate">${esc(s.name)}</div>
+            <div class="text-[10.5px] text-white/40">${fmt(s.ts)} · ${d.count} failure modes · avg RPN ${d.avg}</div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button data-cmp="${s.id}" class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10">Compare to Current</button>
+            <button data-del="${s.id}" class="text-[11px] text-white/35 hover:text-rose-400 px-1.5">✕</button>
+          </div>
+        </div>
+        <div id="cmp-${s.id}" class="hidden mt-2 text-[11.5px] bg-white/[.03] rounded-lg p-3 grid grid-cols-3 gap-3">
+          <div><div class="text-white/40 text-[10px] uppercase">Avg RPN</div><div class="font-bold" style="${deltaCls}">${d.avg} → ${nowStats.avg} (${deltaAvg>0?'+':''}${deltaAvg})</div></div>
+          <div><div class="text-white/40 text-[10px] uppercase">Unacceptable</div><div class="font-bold">${d.bands.Unacceptable} → ${nowStats.bands.Unacceptable}</div></div>
+          <div><div class="text-white/40 text-[10px] uppercase">Compliance</div><div class="font-bold">${d.compScore}% → ${nowStats.compScore}%</div></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function wireSnapshotsCard(){
+  const saveBtn = document.getElementById('saveSnapshotBtn');
+  if(saveBtn) saveBtn.addEventListener('click', saveSnapshot);
+  document.querySelectorAll('[data-cmp]').forEach(b=>b.addEventListener('click', ()=>toggleSnapshotCompare(b.dataset.cmp)));
+  document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ()=>{
+    if(confirm('Delete this snapshot?')) deleteSnapshot(b.dataset.del);
+  }));
+}
+
+/* ============================= COMPLIANCE ============================= */
+function renderCompliance(){
+  const score = Math.round(state.compliance.reduce((a,c)=>a+STATUS_WEIGHT[c.status],0)/state.compliance.length);
+  document.getElementById('view-root').innerHTML = `
+    <div class="grid grid-cols-3 gap-5 mb-5">
+      <div class="card p-5 col-span-1 flex flex-col items-center justify-center">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle class="ring-track" cx="70" cy="70" r="58" fill="none" stroke-width="14"/>
+          <circle class="progress-ring" cx="70" cy="70" r="58" fill="none" stroke="${score>=70?'#34d399':score>=40?'#f59e0b':'#fb7185'}" stroke-width="14" stroke-linecap="round"
+            stroke-dasharray="${2*Math.PI*58}" stroke-dashoffset="${2*Math.PI*58*(1-score/100)}" transform="rotate(-90 70 70)"/>
+          <text x="70" y="76" text-anchor="middle" font-size="26" font-weight="800" fill="#eef1f8">${score}%</text>
+        </svg>
+        <div class="text-[12px] font-semibold mt-2">Live Compliance Score</div>
+        <div class="text-[10.5px] text-white/40 text-center mt-1">Updates instantly as clause status changes below</div>
+      </div>
+      <div class="card p-5 col-span-2">
+        <h3 class="font-bold mb-3 text-[13.5px]">Standards Alignment</h3>
+        <div class="space-y-2.5">
+          ${STANDARDS.map(s=>`
+            <div class="flex gap-3">
+              <span class="tile shrink-0" style="background:${s.color};font-size:9px;">${s.code.split(' ')[0]}</span>
+              <div>
+                <div class="text-[12px] font-bold">${s.code} <span class="font-normal text-white/45">— ${s.title}</span></div>
+                <div class="text-[11.5px] text-white/60">${s.text}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-bold mb-3 text-[13.5px]">ISO 14971:2019 Clause Tracker</h3>
+      <div class="space-y-2">
+        ${state.compliance.map(c=>`
+          <div class="p-2.5 rounded-lg ${c.status==='pending'?'clause-pending':''}" style="background:rgba(255,255,255,.04);">
+            <div class="flex items-center gap-3">
+              <div class="w-40 shrink-0 text-[11.5px] font-bold">${c.clause}</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12px] font-semibold">${c.title}</div>
+                <div class="text-[11px] text-white/45">${c.mapped}</div>
+              </div>
+              <select data-clause="${c.id}" class="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[11.5px] font-semibold">
+                <option value="complete" ${c.status==='complete'?'selected':''}>Complete</option>
+                <option value="partial" ${c.status==='partial'?'selected':''}>Partial</option>
+                <option value="pending" ${c.status==='pending'?'selected':''}>Pending</option>
+              </select>
+            </div>
+            <div class="flex items-center flex-wrap gap-1.5 mt-2">
+              ${(c.evidence||[]).map((ev,i)=>`
+                <a href="${esc(ev.url)}" target="_blank" rel="noopener" class="text-[10.5px] px-2 py-1 rounded-full bg-white/8 hover:bg-white/15 flex items-center gap-1 text-white/80">📎 ${esc(ev.name.length>22?ev.name.slice(0,22)+'…':ev.name)}<span data-rmev="${c.id}::${i}" class="text-white/40 hover:text-rose-400 cursor-pointer">✕</span></a>`).join('')}
+              <label class="text-[10.5px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 cursor-pointer text-white/50">+ Attach evidence<input type="file" data-evidence="${c.id}" class="hidden" accept="image/*,.pdf,.txt,.doc,.docx"></label>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  document.querySelectorAll('[data-clause]').forEach(sel=>sel.addEventListener('change', ()=>{
+    const c = state.compliance.find(x=>x.id===sel.dataset.clause);
+    c.status = sel.value;
+    log(`Compliance clause "${c.clause}" set to ${c.status}.`);
+    renderCompliance();
+  }));
+  document.querySelectorAll('[data-evidence]').forEach(inp=>inp.addEventListener('change', e=>{
+    const file = e.target.files[0]; if(!file) return;
+    uploadEvidence(inp.dataset.evidence, file);
+    e.target.value = '';
+  }));
+  document.querySelectorAll('[data-rmev]').forEach(el=>el.addEventListener('click', ()=>{
+    const [cid, idx] = el.dataset.rmev.split('::');
+    removeEvidence(cid, +idx);
+  }));
+}
+
+async function uploadEvidence(clauseId, file){
+  if(!sb){ showToast('Cloud storage is not connected.', true); return; }
+  try{
+    const path = clauseId + '/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9_.-]/g,'_');
+    const { error: upErr } = await sb.storage.from('evidence').upload(path, file, { upsert:false });
+    if(upErr) throw upErr;
+    const { data: pub } = sb.storage.from('evidence').getPublicUrl(path);
+    const c = state.compliance.find(x=>x.id===clauseId);
+    if(!c.evidence) c.evidence = [];
+    c.evidence.push({ name:file.name, url: pub.publicUrl, ts: Date.now() });
+    log('Evidence "'+file.name+'" attached to compliance clause "'+c.clause+'".');
+    renderCompliance();
+  }catch(e){
+    showToast('Could not upload evidence — make sure the "evidence" storage bucket exists and is public in Supabase.', true);
+  }
+}
+function removeEvidence(clauseId, idx){
+  const c = state.compliance.find(x=>x.id===clauseId);
+  if(!c || !c.evidence) return;
+  c.evidence.splice(idx,1);
+  log('Evidence removed from compliance clause "'+c.clause+'".');
+  renderCompliance();
+}
+
+/* ============================= AI ASSISTANT ============================= */
+let chatMessages = [];
+let pendingFiles = [];
+let apiHistory = [];
+let recognition = null;
+let listening = false;
+
+function renderAssistant(){
+  document.getElementById('view-root').innerHTML = `
+    <div class="grid grid-cols-4 gap-5" style="height:calc(100vh - 190px);">
+      <div class="col-span-1 card p-4 flex flex-col">
+        <h3 class="font-bold text-[13px] mb-3">Quick Prompts</h3>
+        <div class="space-y-2 mb-5">
+          ${QUICK_PROMPTS.map((q,i)=>`<button data-qp="${i}" class="w-full text-left text-[11.5px] px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition text-white/80">${esc(q)}</button>`).join('')}
+        </div>
+        <button id="clearChat" class="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60">Clear conversation</button>
+        <div class="mt-auto pt-4 border-t border-white/10 space-y-2">
+          <div class="text-[11px] text-white/40 leading-relaxed">${apiKey ? ('Connected — powered by ' + chatModel) : 'No API key set. Add one in Settings for full AI chat, file understanding, and open-ended questions.'}</div>
+        </div>
+      </div>
+      <div class="col-span-3 card p-0 flex flex-col overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-white/10 flex items-center gap-2.5">
+          <div class="tile" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));width:32px;height:32px;"><svg viewBox="0 0 24 24" width="62%" height="62%" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.4l7.2 2.6v5.6c0 5.3-3.1 9.9-7.2 11.4-4.1-1.5-7.2-6.1-7.2-11.4V5l7.2-2.6z" stroke-width="1.7"/><path d="M6.6 13.1h2.3l1.3-3.3 2 6.3 1.5-4.3.9 1.3h3" stroke-width="1.5"/></svg></div>
+          <div>
+            <div class="font-bold text-[13.5px] leading-tight">Roger</div>
+            <div class="text-[10.5px] text-white/40 leading-tight">MedRisk Lite Assistant</div>
+          </div>
+        </div>
+        <div id="chatLog" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+        <div id="pendingFiles" class="px-5 flex flex-wrap gap-2"></div>
+        <div class="p-4 border-t border-white/10 flex items-center gap-2">
+          <input type="file" id="fileInput" multiple accept="image/*,.txt,.csv,.md,.json,.log,.pdf,application/pdf" class="hidden">
+          <button id="attachBtn" title="Attach files, photos, or a PDF to analyze" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 shrink-0">📎</button>
+          <button id="triageBtn" class="hidden text-[11px] font-semibold px-2.5 h-10 rounded-full bg-white/5 hover:bg-white/10 shrink-0 whitespace-nowrap" title="Match attached photo against known failure modes">🔍 Triage</button>
+          <button id="micBtn" title="Speak your question" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 shrink-0">🎤</button>
+          <input id="chatInput" placeholder="Ask Roger anything, or about this FMEA data..." class="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-[13px] outline-none placeholder-white/30">
+          <button id="sendBtn" title="Send" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;">➤</button>
+        </div>
+      </div>
+    </div>`;
+  renderChatLog();
+  renderPendingFilesUI();
+  document.getElementById('attachBtn').addEventListener('click', ()=>document.getElementById('fileInput').click());
+  document.getElementById('fileInput').addEventListener('change', e=>{
+    pendingFiles = pendingFiles.concat(Array.from(e.target.files));
+    renderPendingFilesUI();
+    e.target.value = '';
+  });
+  document.getElementById('triageBtn').addEventListener('click', triagePhoto);
+  document.getElementById('micBtn').addEventListener('click', toggleMic);
+  document.getElementById('sendBtn').addEventListener('click', sendChatMessage);
+  document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChatMessage(); } });
+  document.getElementById('clearChat').addEventListener('click', ()=>{ chatMessages=[]; apiHistory=[]; renderChatLog(); });
+  document.querySelectorAll('[data-qp]').forEach(b=>b.addEventListener('click', ()=>{
+    document.getElementById('chatInput').value = QUICK_PROMPTS[+b.dataset.qp];
+    sendChatMessage();
+  }));
+  const micBtn = document.getElementById('micBtn');
+  const SRCheck = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SRCheck){
+    micBtn.disabled = true;
+    micBtn.title = 'Voice input is not supported in this browser - try Chrome or Edge on desktop.';
+    micBtn.classList.add('opacity-40');
+    micBtn.style.cursor = 'not-allowed';
+  }
+}
+
+function renderChatLog(){
+  const logEl = document.getElementById('chatLog');
+  if(!logEl) return;
+  if(chatMessages.length===0){
+    logEl.innerHTML = `<div class="text-center text-white/35 text-[12.5px] mt-10">Say hi to Roger, attach a file or photo, or tap the mic to speak.</div>`;
+    return;
+  }
+  logEl.innerHTML = chatMessages.map(m=>{
+    const isUser = m.role==='user';
+    const bubbleCls = isUser ? 'chat-bubble-user' : 'chat-bubble-ai';
+    const errCls = m.error ? 'border border-rose-400/50' : '';
+    const body = m.pending ? '<span class="dot"></span><span class="dot"></span><span class="dot"></span>' : esc(m.text).replace(/\n/g,'<br>');
+    return `<div class="flex ${isUser?'justify-end':'justify-start'}">
+      <div class="max-w-[75%] px-4 py-2.5 text-[13px] ${bubbleCls} ${errCls}">${body}</div>
+    </div>`;
+  }).join('');
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function renderPendingFilesUI(){
+  const box = document.getElementById('pendingFiles');
+  if(!box) return;
+  box.innerHTML = pendingFiles.map((f,i)=>`<span class="text-[11px] bg-white/8 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-white/80">${f.type.startsWith('image/')?'📷':'📄'} ${esc(f.name)} <button data-rm="${i}" class="text-white/50 hover:text-white">×</button></span>`).join('');
+  box.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click', ()=>{ pendingFiles.splice(+b.dataset.rm,1); renderPendingFilesUI(); }));
+  const triageBtn = document.getElementById('triageBtn');
+  if(triageBtn){
+    const hasImage = pendingFiles.some(f=>f.type.startsWith('image/'));
+    triageBtn.classList.toggle('hidden', !hasImage);
+  }
+}
+
+function triagePhoto(){
+  if(!apiKey){
+    showToast('Photo triage needs a connected API key in Settings — it requires real image understanding.', true);
+    return;
+  }
+  document.getElementById('chatInput').value = 'A photo of physical damage or an issue on the ultrasound probe is attached. Compare it against our documented failure modes for this device and identify which one it most likely represents, explaining your visual reasoning. If none match well, say so clearly and suggest what a new failure mode entry might look like instead.';
+  sendChatMessage();
+}
+
+async function filesToBlocks(files){
+  const blocks = []; const summaries = []; const pdfAnalyses = [];
+  for(const file of files){
+    try{
+      if(file.type.startsWith('image/')){
+        const dataUrl = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+        const base64 = dataUrl.split(',')[1];
+        blocks.push({type:'image', source:{type:'base64', media_type:file.type||'image/png', data:base64}});
+        summaries.push('Photo: '+file.name);
+      } else if(file.type==='application/pdf' || /\.pdf$/i.test(file.name)){
+        try{
+          if(typeof pdfjsLib === 'undefined') throw new Error('pdf engine unavailable');
+          const buf = await file.arrayBuffer();
+          const pdfDoc = await pdfjsLib.getDocument({data:buf}).promise;
+          let text = '';
+          const maxPages = Math.min(pdfDoc.numPages, 20);
+          for(let p=1;p<=maxPages;p++){
+            const page = await pdfDoc.getPage(p);
+            const content = await page.getTextContent();
+            text += content.items.map(it=>it.str).join(' ') + '\n';
+          }
+          const wordCount = (text.match(/\S+/g)||[]).length;
+          blocks.push({type:'text', text:`Attached PDF "${file.name}" (${pdfDoc.numPages} page(s)):\n${text.slice(0,8000)}`});
+          summaries.push('PDF: '+file.name+' ('+pdfDoc.numPages+'p)');
+          pdfAnalyses.push({name:file.name, pages:pdfDoc.numPages, wordCount, preview: text.trim().slice(0,320), fullText: text});
+        }catch(pdfErr){
+          blocks.push({type:'text', text:`Attached file "${file.name}" is a PDF but could not be parsed in this browser (it may be a scanned/image-only PDF).`});
+          summaries.push('PDF: '+file.name+' (could not parse)');
+          showToast('Could not read PDF "'+file.name+'" - try a text-based (not scanned) PDF.', true);
+        }
+      } else if(/\.(txt|csv|md|json|log)$/i.test(file.name) || file.type.startsWith('text/')){
+        const text = await file.text();
+        blocks.push({type:'text', text:`Attached file "${file.name}":\n${text.slice(0,8000)}`});
+        summaries.push('File: '+file.name);
+      } else {
+        blocks.push({type:'text', text:`Attached file "${file.name}" - content preview is not supported for this file type in this build.`});
+        summaries.push('File: '+file.name);
+      }
+    }catch(e){
+      summaries.push('File: '+file.name+' (could not be read)');
+      showToast('Could not read file "'+file.name+'" - it was skipped.', true);
+    }
+  }
+  return {blocks, summaries, pdfAnalyses};
+}
+
+// Recognizes MedRisk Lite's own generated PDFs (Report / Quickstart Guide) so Roger can answer
+// specific questions about them from the live app data + built-in knowledge base, with no API key needed.
+function classifyOwnPdf(fullText){
+  const s = fullText || '';
+  if(/FMEA Risk Assessment Report|Report ID|Failure Mode and Effects Analysis/i.test(s)) return 'report';
+  if(/Quickstart Guide|MEDRISK LITE|Sign In & Setup|All 9 Tabs at a Glance/i.test(s)) return 'manual';
+  return null;
+}
+// Lightweight local keyword search over an unrecognized PDF's extracted text (no API key needed).
+function searchPdfAnswer(question, pdfAnalyses){
+  const qWords = (question||'').toLowerCase().match(/[a-z0-9]{3,}/g) || [];
+  if(!qWords.length) return null;
+  let best = null, bestScore = 0;
+  pdfAnalyses.forEach(p=>{
+    const chunks = (p.fullText||'').split(/\n+/).map(c=>c.trim()).filter(c=>c.length>15);
+    chunks.forEach(c=>{
+      const cl = c.toLowerCase();
+      const score = qWords.reduce((s,w)=> s + (cl.includes(w)?1:0), 0);
+      if(score > bestScore){ bestScore = score; best = {text:c, file:p.name}; }
+    });
+  });
+  if(!best || bestScore < 2) return null;
+  return `From "${best.file}":\n"${best.text.slice(0,420)}${best.text.length>420?'…':''}"`;
+}
+function buildSystemPrompt(){
+  const rows = state.failureModes.map(f=>'#'+f.id+' ['+COMP(f.componentId).name+'] '+f.mode+' - S'+f.S+' O'+f.O+' D'+f.D+' RPN'+rpn(f)+' ('+classify(rpn(f))+')').join('\n');
+  return 'You are Roger, the AI Assistant built into MedRisk Lite, a browser-based FMEA risk-assessment tool for medical devices. Introduce yourself as Roger if asked your name. Answer general questions on any topic naturally and helpfully, the same way any capable assistant would. You also have access to the FMEA data set currently loaded for a portable ultrasound probe:\n' + rows + '\nUse this context when the user asks about RPN, ALARP, Severity, Occurrence, Detectability, ISO 14971, IEC 60601-1, or IEC 62366-1. If files or images are attached, read and incorporate their content into your answer. Keep answers concise unless more detail is requested.';
+}
+
+function computeChatStats(){
+  const fms = state.failureModes;
+  const bands = {Acceptable:[], ALARP:[], Unacceptable:[]};
+  fms.forEach(f=>{ bands[classify(rpn(f))].push(f); });
+  const sorted = [...fms].sort((a,b)=>rpn(b)-rpn(a));
+  const compScore = Math.round(state.compliance.reduce((a,c)=>a+STATUS_WEIGHT[c.status],0)/state.compliance.length);
+  const byComponent = COMPONENTS.map(c=>{
+    const items = fms.filter(f=>f.componentId===c.id);
+    const avg = items.length ? Math.round(items.reduce((a,f)=>a+rpn(f),0)/items.length) : 0;
+    return {c, items, avg};
+  });
+  return {fms, bands, sorted, compScore, byComponent};
+}
+
+const COMPONENT_KEYWORDS = [
+  ['transducer','TA'], ['piezoelectric','TA'], ['crystal array','TA'],
+  ['acoustic lens','AL'], ['matching layer','AL'], ['lens','AL'],
+  ['strain relief','CB'], ['cable','CB'],
+  ['connector','CN'],
+  ['housing','HS'], ['mechanical seal','HS'], ['water ingress','HS'],
+  ['battery','PW'], ['power supply','PW'],
+  ['circuit board','EL'], ['pcb','EL'], ['solder','EL'],
+  ['companion app','UI'], ['user interface','UI'], ['caliper','UI'], ['touchscreen','UI'], ['calibration drift','UI'],
+  ['sheath','SH'], ['disinfectant','SH'], ['sterilization','SH'], ['sterilisation','SH']
+];
+
+function localFallbackReply(text){
+  const raw = (text||'').trim();
+  const t = raw.toLowerCase();
+
+  /* ---- Greetings & meta (short messages only, checked first) ---- */
+  if(t.length < 40){
+    if(/^(hi|hello|hey|yo|hola|hiya|greetings)[\s!.,]*$/.test(t) || /^good\s?(morning|afternoon|evening)\b/.test(t)){
+      return "Hello! I'm Roger, the MedRisk Lite assistant. Ask me about FMEA concepts, the ultrasound probe risk data, any tab in the app, or troubleshooting — I can also generate PDFs and read attached files.";
+    }
+    if(/^(thanks|thank you|thx|ty)[\s!.,]*$/.test(t)){
+      return "You're welcome! Let me know if there's anything else about the risk data or the app you'd like help with.";
+    }
+    if(/^(bye|goodbye|see ya|see you|later)[\s!.,]*$/.test(t)){
+      return 'Goodbye! Your data is saved automatically, so you can pick up right where you left off.';
+    }
+    if(/^(who are you|what are you)\??$/.test(t)){
+      return "I'm Roger, the built-in assistant for MedRisk Lite, a free FMEA risk-assessment tool for the portable ultrasound probe. I run entirely in your browser and answer from the live risk data — no API key or cost required.";
+    }
+    if(/^(what.?s your name|your name)\??$/.test(t)){
+      return "I'm Roger — the assistant built into MedRisk Lite.";
+    }
+    if(/^(help|what can you do|how can you help)\??$/.test(t)){
+      return 'I can answer questions about FMEA, RPN, ALARP, the standards behind this tool, the live risk data (highest risk, compliance score, per-component breakdowns), how to use each tab, troubleshooting common errors, and how to use the PDF report/manual generators and PDF analyzer. Just ask.';
+    }
+    if(/^(are you (a )?real ai|are you human|are you gpt|are you claude)\??$/.test(t)){
+      return "Without an API key connected, I'm Roger — a lightweight rule-based assistant that answers from a built-in knowledge base about this app and FMEA, not a full language model. Add a free-tier API key in Settings to unlock a full AI for open-ended questions.";
+    }
+  }
+
+  /* ---- Contact / support (dynamic, checked early) ---- */
+  if(/contact (number|info|details)|phone number|call (support|you)|reach (support|you|someone)/.test(t)){
+    return 'You can reach support at ' + CONTACT_INFO.email + (CONTACT_INFO.phone ? (', or by phone at ' + CONTACT_INFO.phone + '.') : ". A phone line isn't set up yet — email is the fastest way to reach out.");
+  }
+  if(/who (built|made|created|developed) this/.test(t)){
+    return 'MedRisk Lite was built as an independent FMEA risk-assessment tool. For questions, reach out at ' + CONTACT_INFO.email + '.';
+  }
+  if(/report a bug|found a bug|something.?s broken/.test(t)){
+    return 'Sorry about that! Please email ' + CONTACT_INFO.email + ' with what you were doing when it happened — screenshots help a lot.';
+  }
+  if(/feature request|suggest a feature|can you add/.test(t)){
+    return 'Feature ideas are always welcome — send them to ' + CONTACT_INFO.email + '.';
+  }
+
+  const stats = computeChatStats();
+
+  if(/highest.?risk|riskiest|worst failure|top risk/.test(t)){
+    const top = stats.sorted[0];
+    return `The highest-risk failure mode right now is "${top.mode}" on the ${COMP(top.componentId).name}, at RPN ${rpn(top)} (${classify(rpn(top))}). Severity ${top.S}, Occurrence ${top.O}, Detectability ${top.D}. Suggested mitigation: ${top.mitigation}`;
+  }
+  if(/lowest.?risk|safest|least risk/.test(t)){
+    const low = stats.sorted[stats.sorted.length-1];
+    return `The lowest-risk failure mode is "${low.mode}" on the ${COMP(low.componentId).name}, at RPN ${rpn(low)} (${classify(rpn(low))}).`;
+  }
+  if(/unacceptable/.test(t) && /how many|count|list|which/.test(t)){
+    const list = stats.bands.Unacceptable.map(f=>f.mode).join('; ') || 'none currently';
+    return `There are ${stats.bands.Unacceptable.length} Unacceptable failure mode(s): ${list}.`;
+  }
+  if(/alarp/.test(t) && /how many|count|list|which/.test(t)){
+    const list = stats.bands.ALARP.map(f=>f.mode).join('; ') || 'none currently';
+    return `There are ${stats.bands.ALARP.length} failure mode(s) in the ALARP band: ${list}.`;
+  }
+  if(/acceptable/.test(t) && /how many|count|list|which/.test(t) && !/unacceptable/.test(t)){
+    const list = stats.bands.Acceptable.map(f=>f.mode).join('; ') || 'none currently';
+    return `There are ${stats.bands.Acceptable.length} Acceptable failure mode(s): ${list}.`;
+  }
+  if(/compliance score|how compliant/.test(t)){
+    return `The current ISO 14971:2019 compliance score is ${stats.compScore}%, based on the Complete, Partial or Pending status of each clause in the Compliance tab.`;
+  }
+  if(/average rpn|mean rpn/.test(t)){
+    const avg = Math.round(stats.fms.reduce((a,f)=>a+rpn(f),0)/stats.fms.length);
+    return `The average RPN across all ${stats.fms.length} documented failure modes is ${avg}.`;
+  }
+  if(/most failure modes|which component.*most/.test(t)){
+    const top = [...stats.byComponent].sort((a,b)=>b.items.length-a.items.length)[0];
+    return `${top.c.name} has the most documented failure modes, with ${top.items.length}.`;
+  }
+  if(/riskiest component|highest.?average.?rpn|which component.*risk/.test(t)){
+    const top = [...stats.byComponent].sort((a,b)=>b.avg-a.avg)[0];
+    return `${top.c.name} has the highest average RPN, at ${top.avg} across ${top.items.length} failure mode(s).`;
+  }
+  if(/how many components|number of components|list.*components/.test(t)){
+    return `There are ${COMPONENTS.length} components tracked: ${COMPONENTS.map(c=>c.name).join(', ')}.`;
+  }
+  if(/how many failure modes|total failure modes/.test(t)){
+    return `There are ${stats.fms.length} documented failure modes in the current data set.`;
+  }
+
+  for(let i=0;i<COMPONENT_KEYWORDS.length;i++){
+    const kw = COMPONENT_KEYWORDS[i][0], cid = COMPONENT_KEYWORDS[i][1];
+    if(t.includes(kw)){
+      const items = stats.fms.filter(f=>f.componentId===cid);
+      if(items.length){
+        const list = items.map(f=>`${f.mode} (RPN ${rpn(f)}, ${classify(rpn(f))})`).join('; ');
+        return `${COMP(cid).name} has ${items.length} documented failure mode(s): ${list}.`;
+      }
+    }
+  }
+
+  const kb = [
+    [/what is fmea|fmea stand/, 'FMEA stands for Failure Mode and Effects Analysis, a structured method for identifying how a product could fail, how serious each failure would be, how likely it is, and how easily it would be caught before causing harm.'],
+    [/rpn/, 'RPN (Risk Priority Number) equals Severity times Occurrence times Detectability. A higher RPN means higher priority for risk mitigation.'],
+    [/alarp/, 'ALARP stands for As Low As Reasonably Practicable. It is the middle risk band between Acceptable and Unacceptable, where mitigation should be considered even though it is not mandatory.'],
+    [/severity/, 'Severity (S) rates how serious the consequence of a failure would be, from 1 (negligible) to 10 (catastrophic).'],
+    [/occurrence/, 'Occurrence (O) rates how often a failure is likely to happen, from 1 (rare) to 10 (very frequent).'],
+    [/detect/, 'Detectability (D) rates how likely a failure is to be caught before it causes harm, from 1 (almost certain to detect) to 10 (cannot detect).'],
+    [/14971/, 'ISO 14971:2019 is the core international standard for medical device risk management. It defines the risk analysis, evaluation, control, and review process this tool is built around.'],
+    [/60601/, 'IEC 60601-1 covers electrical and mechanical safety for medical electrical equipment. It informs several failure modes in this data set, such as housing seal and connector faults.'],
+    [/62366/, 'IEC 62366-1 covers usability engineering for medical devices, including human-factor failure modes like incorrect mode selection or display misreading.'],
+    [/13485/, 'ISO 13485:2016 is the quality management standard for medical devices. It shapes how documentation and risk records should be structured and kept.'],
+    [/heatmap/, 'The Analytics tab includes a component-level risk heatmap, colored by average RPN, useful for spotting the riskiest areas of the device at a glance.'],
+    [/dashboard/, 'The Dashboard tab shows a summary: total failure modes, average RPN, the highest-risk item, the live compliance score, an ALARP breakdown chart, and recent activity.'],
+    [/device library|library tab/, 'The Device Library tab shows the portable ultrasound probe as the active device, plus other device types marked as coming soon.'],
+    [/workspace/, 'The FMEA Workspace tab is where you edit the data: click a part on the probe diagram to filter its failure modes, then adjust Severity, Occurrence and Detectability from the dropdowns. RPN and ALARP update instantly.'],
+    [/register/, 'The Risk Register tab is the master table of every failure mode. Click a column header to sort, use the pills to filter by ALARP band, or search by keyword.'],
+    [/analytics/, 'The Analytics tab shows an RPN bar chart, a component risk heatmap, and the full timestamped audit trail of every change made to the data.'],
+    [/compliance/, 'The Compliance tab tracks each ISO 14971:2019 clause as Complete, Partial or Pending. The score ring updates live as you change a status.'],
+    [/settings/, 'The Settings tab holds the AI API key, the RPN scoring thresholds for ALARP and Unacceptable, and options to export, import, or reset your data.'],
+    [/add.*failure mode|new failure mode/, 'New failure modes are currently added through "Suggest Failure Modes" on the FMEA Workspace tab, which proposes curated candidates for the selected component.'],
+    [/export|import|backup/, 'In Settings, Export JSON downloads a full backup of your data, Import JSON restores from a backup file, and Reset Demo Data reverts to the original seeded data set.'],
+    [/threshold|scoring config/, 'In Settings you can change the RPN value at which a failure mode becomes ALARP, and the value at which it becomes Unacceptable.'],
+    [/api key/, 'Add an Anthropic API key in Settings under AI Assistant to unlock full open-ended AI chat, file understanding, and photo analysis. Without a key, this built-in assistant answers project questions only.'],
+    [/novelt|unique|different from|stand out/, 'Compared to a manual spreadsheet, this tool automates RPN and ALARP classification, adds a clickable probe diagram, a live compliance tracker, a timestamped audit trail, curated failure-mode suggestions, cloud sync with login, an onboarding survey, and this embedded assistant with file, photo, PDF, and voice input.'],
+    [/advantage|benefit/, 'Key advantages: no installation required, automated and consistent scoring, full traceability through the audit trail, alignment with ISO 14971, IEC 60601-1, IEC 62366-1 and ISO 13485, cloud-synced shared data, and one-click regulatory-style PDF reports and manuals.'],
+    [/^(report|pdf)$/, 'Use the Report Generator tab to export a full FMEA report as a PDF, including the failure mode table, RPN chart, and mitigation notes. There is also a separate App User Manual PDF you can generate from the same tab.'],
+
+    /* ---- Errors & troubleshooting ---- */
+    [/pdf.*(not|won.?t|doesn.?t|fail).*(generat|download|work)/, "If the PDF report or manual won't generate, make sure your internet connection is active (the PDF library loads from a CDN) and try reloading the page. A toast message will explain the specific failure if one occurs."],
+    [/chart.*(not|won.?t|doesn.?t).*(load|show|work)/, "If a chart doesn't load, it usually means the charting library couldn't load from the CDN — check your internet connection and reload. The app falls back to plain text so nothing else breaks."],
+    [/mic.*(not|won.?t|doesn.?t).*work|voice.*not.*(work|support)/, "Voice input uses your browser's built-in speech recognition, which only works in Chrome or Edge on desktop. If the mic button is greyed out, your browser doesn't support it — try Chrome/Edge, or just type your question."],
+    [/microphone.*(denied|permission|blocked)/, "If the microphone was blocked, check your browser's site permissions and allow microphone access for this page, then click the mic button again."],
+    [/no api key|chat.*not.*(work|respond)|ai.*not.*respond/, "Without an API key, Roger still works using a built-in knowledge base — it just can't do fully open-ended chat. Add a free-tier Anthropic API key in Settings to unlock full AI conversation."],
+    [/api key.*(wrong|invalid|rejected|401)/, 'A rejected API key usually means it was mistyped or has expired. Double-check it in Settings, or generate a fresh one at console.anthropic.com.'],
+    [/rate limit|429/, "A 429 error means you're being rate-limited by the AI provider — wait a few seconds and try again."],
+    [/(can.?t|cannot|unable to) log ?in|login.*(not|doesn.?t) work/, "If login isn't working: Guest login needs Anonymous Sign-Ins enabled in the Supabase Auth settings on the backend, and Google login needs a Google OAuth Client ID configured in both Google Cloud Console and Supabase. If one isn't set up yet, try the other."],
+    [/google (login|sign.?in).*(fail|not work|error)/, "If Google sign-in fails, the backend likely hasn't finished Google OAuth setup yet. Try Guest login in the meantime."],
+    [/guest (login|sign.?in).*(fail|not work|error)/, "If Guest login fails, Anonymous Sign-Ins probably need to be enabled in the Supabase project's Authentication settings."],
+    [/(not|isn.?t|won.?t) sync|sync.*(fail|error|not work)/, "If cloud sync fails, your changes are still saved locally in this browser — nothing is lost. Sync resumes automatically once the connection is restored; check the status pill in the top-right header."],
+    [/lost my data|data (gone|disappeared|missing)/, "Your data is saved both locally in this browser and to the cloud database once signed in. If it looks missing, check you're using the same browser/profile, and confirm the save indicator in the header shows a recent sync time."],
+    [/(app|page|site).*(frozen|blank|white screen|not loading)/, "If the app appears blank or frozen, it's almost always a failed script load from a CDN — reload the page on a stable connection. If it persists, try a different browser."],
+    [/file (upload|attach).*(not|won.?t|doesn.?t) work/, 'If a file will not attach, check the file type — supported types are images, PDFs, and plain text/CSV/JSON/Markdown/log files. Unsupported types are skipped with a toast notification.'],
+    [/image.*(not|won.?t).*(recogni[sz]|read|analy[sz])/, "Photo analysis (recognizing what's in an image) requires a connected API key — the free built-in assistant can only extract text from PDFs and files, not interpret photos."],
+    [/offline|no internet|no connection/, 'This app needs an internet connection for AI chat, cloud sync, chart rendering, and PDF generation, since those load from external libraries and services. Core data editing still works offline and saves locally.'],
+    [/wrong rpn|rpn.*(wrong|incorrect)/, 'RPN is always Severity × Occurrence × Detectability, recalculated instantly whenever you change a score in the FMEA Workspace. If a number looks wrong, check the three individual S/O/D values for that failure mode.'],
+    [/page (not loading|won.?t load)/, 'If the page itself will not load, check your internet connection, then try a hard refresh (Ctrl/Cmd+Shift+R).'],
+    [/forgot password|reset password/, "There's no password to manage here — sign in with Google, or use Guest access, which needs no credentials at all."],
+    [/session expired|logged out unexpectedly/, 'If you were logged out unexpectedly, your session likely expired — just sign in again; your data is safe in the cloud and locally.'],
+    [/browser not supported|which browser/, 'The app works best in Chrome or Edge (desktop) for full functionality including voice input. Other modern browsers will run the core app fine but may not support voice input.'],
+    [/(slow|laggy|performance)/, 'Performance issues are usually caused by a slow network connection (since charts, PDFs, and AI chat all load resources externally) rather than the app itself — try reloading on a faster connection.'],
+
+    /* ---- App User Manual generator ---- */
+    [/(app|user) manual.*(generat|create|download)|generate.*manual/, 'Go to the Report Generator tab and click "Generate User Manual (PDF)" — it produces a walkthrough PDF covering every tab and feature in the app.'],
+    [/what.?s in the manual|manual (contain|cover)/, 'The App User Manual PDF covers signing in, the onboarding step, and a walkthrough of every tab: Dashboard, Device Library, FMEA Workspace, Risk Register, Analytics, Compliance, AI Assistant, Report Generator, and Settings.'],
+    [/difference between manual and (fmea )?report/, 'The FMEA Report PDF contains your actual risk data (failure modes, RPN, mitigations, compliance). The App User Manual PDF explains how to use the software itself — the instruction booklet versus the results.'],
+    [/customi[sz]e the manual/, "The manual PDF isn't currently customizable — it's a fixed walkthrough of the app's features. The FMEA Report, by contrast, always reflects your current live data."],
+    [/where does the manual (download|go|save)/, "Like the FMEA report, the manual PDF downloads straight to your browser's default Downloads folder."],
+    [/manual for (mentor|presentation|staff)/, 'The manual PDF is a good leave-behind document when presenting to a mentor or staff — it explains the tool without needing you to demo live.'],
+    [/manual offline/, 'Once downloaded, the manual PDF works completely offline like any PDF file.'],
+    [/manual.*(privacy|data)/, 'The manual PDF only contains static instructional text — it does not include any of your risk data or personal information.'],
+    [/manual.*(file )?format/, 'The manual is generated as a standard PDF file, viewable in any PDF reader.'],
+    [/regenerate.*manual|manual.*(update|refresh)/, "The manual describes the app's features, not your live data, so you only need to regenerate it if you want a fresh copy — it doesn't change as your risk data changes."],
+
+    /* ---- PDF Analyzer ---- */
+    [/what is (the )?pdf analy[sz]er/, "The PDF Analyzer lets you attach a PDF in the AI Assistant tab — it extracts the text client-side (page count, word count, and a preview) for free, with no API key needed. Connect an API key for a full AI-generated summary or Q&A over the document instead."],
+    [/how (do i|to) use.*pdf analy[sz]er|analy[sz]e a pdf/, 'In the AI Assistant tab, click the paperclip, choose a PDF, then send your message — the assistant will extract and summarize the text automatically.'],
+    [/what file types.*(support|analy[sz]er)/, 'The analyzer supports standard text-based PDFs, plus images (JPG/PNG) and plain text/CSV/JSON/Markdown/log files.'],
+    [/is (my |the )?(pdf|file) (data )?stored/, "Attached files are processed only in your browser session and sent only to the AI API if you've added a key — they are not stored on any server by this app."],
+    [/pdf.*(size limit|too large|max size)/, 'There is no hard size cap, but very large PDFs are capped at the first 20 pages and 8,000 characters of extracted text to keep the app responsive.'],
+    [/what does (it|the analy[sz]er) extract/, "It extracts plain text content, page count, and word count from the PDF. It can't analyze layout, embedded images, or handwriting."],
+    [/(can it|does it) read (a )?scanned pdf/, "No — scanned or image-only PDFs have no embedded text layer, so the analyzer can't extract anything from them. Only text-based PDFs work."],
+    [/(will|does) (the )?analy[sz]er replace (the )?ai chat/, 'No — without an API key, the analyzer only gives page count, word count, and a text preview. For a real summary or Q&A over the content, connect an API key.'],
+    [/is (the )?(pdf )?analy[sz]er accurate/, 'Text extraction accuracy depends on how the PDF was created — PDFs exported from Word/Docs extract cleanly, while some scanned or oddly formatted PDFs may extract poorly or not at all.'],
+    [/privacy of.*(uploaded|attached) pdf/, "Your PDF is processed locally in your browser; it's only sent externally if you've connected an API key and choose to send a message with it attached."],
+
+    /* ---- How-to / helper manual ---- */
+    [/how (do i|to) (navigate|switch|move between) tabs/, 'Use the sidebar on the left — click any of the 9 tiles to jump straight to that section.'],
+    [/how (do i|to) edit s ?o ?d|how (do i|to) change (severity|occurrence|detectability)/, 'Open FMEA Workspace, find the failure mode, and use the S, O, and D dropdowns on its card — RPN and ALARP update instantly.'],
+    [/how (do i|to) filter (the )?risk register/, 'In Risk Register, use the pill buttons (All / Acceptable / ALARP / Unacceptable) to filter by risk band.'],
+    [/how (do i|to) sort/, 'Click any column header in the Risk Register table to sort by that column — click again to reverse the order.'],
+    [/how (do i|to) search/, 'Use the search box at the top of the Risk Register to filter by failure mode text or component name.'],
+    [/how (do i|to) export|how (do i|to) (backup|back up)/, "Go to Settings and click \"Export JSON\" to download a full backup of your data (your API key is never included)."],
+    [/how (do i|to) import/, 'In Settings, click "Import JSON" and choose a previously exported backup file to restore your data.'],
+    [/how (do i|to) reset (the )?(demo )?data/, 'In Settings, click "Reset Demo Data" to revert everything back to the original seeded ultrasound probe data set.'],
+    [/how (do i|to) change (the )?(rpn )?thresholds/, 'In Settings, under RPN Scoring Configuration, set the RPN value where ALARP and Unacceptable begin, then click Save Thresholds.'],
+    [/how (do i|to) (view|check) (the )?compliance score/, 'Open the Compliance tab — the ring chart on the left shows your live score, updating instantly as you change clause statuses.'],
+    [/how (do i|to) add (an |my )?api key/, 'Go to Settings > AI Assistant, paste your Anthropic API key, choose a model, and click Save.'],
+    [/how (do i|to) use voice input/, 'In the AI Assistant tab, click the microphone icon, speak your question, then click send — works in Chrome or Edge on desktop.'],
+    [/how (do i|to) attach a photo/, "In the AI Assistant tab, click the paperclip icon and choose an image file — it'll be sent along with your next message."],
+    [/how (do i|to) clear (the )?chat/, 'Click "Clear conversation" in the AI Assistant sidebar to start fresh.'],
+    [/how does login work/, 'Click "Continue with Google" to sign in with your Google account, or "Continue as Guest" to skip account creation — both give you full access to the shared risk data.'],
+    [/is guest data (saved|permanent)/, 'Yes — Guest sessions still read and write the same shared cloud data as signed-in users; only your login identity is temporary, not the risk data itself.'],
+    [/how (do i|to) log ?out/, 'Go to Settings > Account and click Logout.']
+  ];
+  for(let i=0;i<kb.length;i++){ if(kb[i][0].test(t)) return kb[i][1]; }
+
+  return 'I do not have an exact answer for that, but I can help with: FMEA concepts (RPN, ALARP, Severity, Occurrence, Detectability), the ISO 14971, IEC 60601-1, IEC 62366-1 and ISO 13485 standards, live data questions (highest-risk item, compliance score, average RPN, failure modes for a specific component), and how to use each tab. Try rephrasing, or add a free-tier AI key in Settings for fully open-ended answers.';
+}
+
+function friendlyChatError(err){
+  const m = (err && err.message) || '';
+  if(/API error 401/.test(m)) return 'That API key was rejected - double check it in Settings.';
+  if(/API error 429/.test(m)) return 'Rate limited by the API - wait a few seconds and try again.';
+  if(/API error 5\d\d/.test(m)) return 'The AI service is temporarily unavailable - try again shortly.';
+  if(/Failed to fetch|NetworkError|network/i.test(m)) return 'Could not reach the AI - check your internet connection.';
+  return 'Could not reach the AI (' + m + '). Check your API key and connection in Settings.';
+}
+
+async function sendChatMessage(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text && pendingFiles.length===0) return;
+  const files = pendingFiles.slice(); pendingFiles = []; renderPendingFilesUI();
+  const {blocks, summaries, pdfAnalyses} = await filesToBlocks(files);
+  const displayText = text + (summaries.length ? ('\n' + summaries.join(' · ')) : '');
+  chatMessages.push({role:'user', text:displayText, ts:Date.now()});
+  input.value = '';
+  renderChatLog();
+
+  const contentBlocks = [];
+  if(text) contentBlocks.push({type:'text', text});
+  blocks.forEach(b=>contentBlocks.push(b));
+  if(contentBlocks.length===0) contentBlocks.push({type:'text', text:'(no text, see attached files)'});
+  apiHistory.push({role:'user', content:contentBlocks});
+
+  if(!apiKey){
+    let reply;
+    if(pdfAnalyses && pdfAnalyses.length){
+      const kinds = pdfAnalyses.map(p=>classifyOwnPdf(p.fullText));
+      const isReport = kinds.includes('report'), isManual = kinds.includes('manual');
+      if(text && (isReport || isManual)){
+        const label = isReport ? 'the FMEA Report' : 'the Quickstart Guide';
+        reply = `That looks like ${label}, so here's the answer straight from the live app data:\n\n` + localFallbackReply(text);
+      } else if(text){
+        reply = searchPdfAnswer(text, pdfAnalyses) ||
+          pdfAnalyses.map(p=>`I couldn't find a confident answer to that in "${p.name}" (${p.pages} page(s), ~${p.wordCount} words).\nPreview: "${p.preview}${p.preview.length>=320?'…':''}"`).join('\n\n') +
+          '\n\nAdd a free-tier API key in Settings for a full AI-generated summary or Q&A over this document.';
+      } else {
+        reply = pdfAnalyses.map(p=>`PDF Analyzer — "${p.name}": ${p.pages} page(s), about ${p.wordCount} words.\nPreview: "${p.preview}${p.preview.length>=320?'…':''}"`).join('\n\n')
+          + '\n\nAsk me a specific question about this file and I\'ll try to answer it — or add a free-tier API key in Settings for a full AI-generated summary.';
+      }
+    } else {
+      reply = localFallbackReply(text);
+    }
+    chatMessages.push({role:'assistant', text:reply, ts:Date.now()});
+    apiHistory.push({role:'assistant', content:[{type:'text', text:reply}]});
+    renderChatLog();
+    return;
+  }
+
+  if(navigator.onLine === false){
+    chatMessages.push({role:'assistant', text:'You appear to be offline - reconnect to the internet to use the AI Assistant.', ts:Date.now(), error:true});
+    renderChatLog();
+    return;
+  }
+
+  chatMessages.push({role:'assistant', text:'', ts:Date.now(), pending:true});
+  renderChatLog();
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({ model: chatModel, max_tokens: 1024, system: buildSystemPrompt(), messages: apiHistory })
+    });
+    if(!res.ok){
+      const errText = await res.text();
+      throw new Error('API error '+res.status+': '+errText.slice(0,180));
+    }
+    const data = await res.json();
+    const reply = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '(empty response)';
+    chatMessages.pop();
+    chatMessages.push({role:'assistant', text:reply, ts:Date.now()});
+    apiHistory.push({role:'assistant', content:[{type:'text', text:reply}]});
+  }catch(err){
+    chatMessages.pop();
+    chatMessages.push({role:'assistant', text:friendlyChatError(err), ts:Date.now(), error:true});
+  }
+  renderChatLog();
+}
+
+function toggleMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = document.getElementById('micBtn');
+  if(!SR){ showToast('Voice input is not supported in this browser - try Chrome or Edge on desktop.', true); return; }
+  if(listening){ if(recognition) recognition.stop(); return; }
+  try{
+    recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.onstart = ()=>{ listening = true; micBtn.classList.add('mic-active'); };
+    recognition.onend = ()=>{ listening = false; micBtn.classList.remove('mic-active'); };
+    recognition.onerror = (e)=>{
+      listening = false; micBtn.classList.remove('mic-active');
+      const reasons = {
+        'not-allowed':'Microphone permission was denied - allow microphone access and try again.',
+        'no-speech':'No speech was detected - try again.',
+        'audio-capture':'No microphone was found on this device.',
+        'network':'A network issue interrupted voice input - try again.'
+      };
+      showToast(reasons[e.error] || 'Voice input stopped unexpectedly - try again.', true);
+    };
+    recognition.onresult = (e)=>{
+      let transcript = '';
+      for(let i=0;i<e.results.length;i++){ transcript += e.results[i][0].transcript; }
+      document.getElementById('chatInput').value = transcript;
+    };
+    recognition.start();
+  }catch(e){
+    listening = false;
+    showToast('Could not start voice input - try again.', true);
+  }
+}
+
+/* ============================= REPORT GENERATOR ============================= */
+function renderReport(){
+  document.getElementById('view-root').innerHTML = `
+    <div class="grid grid-cols-2 gap-5">
+      <div class="card p-6">
+        <h3 class="font-bold text-[15px] mb-2">FMEA Report</h3>
+        <p class="text-[12.5px] text-white/60 mb-4">Generates a structured PDF — cover page, objectives, full FMEA table (all 15 failure modes), RPN chart, and ISO 14971:2019 compliance summary — ready to include in a risk-management file.</p>
+        <ul class="text-[12px] text-white/60 space-y-1 mb-5 list-disc pl-5">
+          <li>Standards metadata (ISO 14971:2019, IEC 60601-1, IEC 62366-1, ISO 13485:2016)</li>
+          <li>Complete FMEA table with Severity, Occurrence, Detectability, RPN and ALARP classification</li>
+          <li>RPN distribution chart and current compliance score</li>
+          <li>Mitigation notes for every documented failure mode, plus a summary and sign-off page</li>
+        </ul>
+        <button id="genPdf" class="px-5 py-2.5 rounded-lg font-semibold text-[13px]" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;">Generate PDF Report</button>
+        <div id="genStatus" class="text-[11.5px] text-white/40 mt-2"></div>
+      </div>
+      <div class="card p-6">
+        <h3 class="font-bold text-[15px] mb-2">App User Manual</h3>
+        <p class="text-[12.5px] text-white/60 mb-4">Generates a walkthrough PDF explaining how to use MedRisk Lite — every tab, the login flow, and the AI Assistant — useful as a leave-behind document for a mentor or reviewer.</p>
+        <ul class="text-[12px] text-white/60 space-y-1 mb-5 list-disc pl-5">
+          <li>Login and onboarding overview</li>
+          <li>Step-by-step guide to all 9 tabs</li>
+          <li>AI Assistant usage tips (chat, files, photos, PDFs, voice)</li>
+          <li>Contact details for support</li>
+        </ul>
+        <button id="genManual" class="px-5 py-2.5 rounded-lg font-semibold text-[13px] bg-white/5 hover:bg-white/10">Generate User Manual (PDF)</button>
+        <div id="genManualStatus" class="text-[11.5px] text-white/40 mt-2"></div>
+      </div>
+    </div>`;
+  document.getElementById('genPdf').addEventListener('click', generateReport);
+  document.getElementById('genManual').addEventListener('click', generateManualPdf);
+}
+
+async function generateManualPdf(){
+  const status = document.getElementById('genManualStatus');
+  if(typeof window.jspdf === 'undefined'){
+    status.textContent = 'The PDF library did not load - check your internet connection and reload the page.';
+    showToast('PDF library did not load. Check your connection and reload the page.', true);
+    return;
+  }
+  status.textContent = 'Rendering manual…';
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'pt', format:'a4', orientation:'landscape'});
+    const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
+    const margin = 26, gutter = 14, cols = 3, rows = 2, footerH = 26;
+    const colW = (W - margin*2 - gutter*(cols-1)) / cols;
+    const rowH = (H - margin*2 - footerH - gutter*(rows-1)) / rows;
+    const INK = [23,28,42], SUB = [96,104,122], LINE = [222,225,232];
+    const PALETTE = { cyan:[8,145,178], purple:[109,40,217], amber:[180,83,9], green:[5,122,85], pink:[190,24,93], navy:[15,23,42], blue:[29,78,216], slate:[51,65,85] };
+
+    // panel(gx,gy) => top-left corner for a grid cell (gx:0-2, gy:0-1)
+    function cellXY(gx, gy){ return [margin + gx*(colW+gutter), margin + gy*(rowH+gutter)]; }
+
+    function panel(gx, gy, title, color, drawBody, opts){
+      opts = opts || {};
+      const [x,y] = cellXY(gx,gy);
+      const w = opts.wSpan ? colW*opts.wSpan + gutter*(opts.wSpan-1) : colW;
+      const h = rowH;
+      doc.setDrawColor(LINE[0],LINE[1],LINE[2]); doc.setLineWidth(0.75); doc.setFillColor(255,255,255);
+      doc.rect(x, y, w, h, 'FD');
+      const headH = 25;
+      doc.setFillColor(color[0],color[1],color[2]); doc.rect(x, y, w, headH, 'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+      doc.text(title, x+11, y+16.5);
+      const bx = x+11, by = y+headH+11, bw = w-22, bh = h-headH-18;
+      drawBody(bx, by, bw, bh);
+    }
+
+    function bulletsIn(x, y, w, items, opts){
+      opts = opts || {};
+      doc.setFont('helvetica','normal'); doc.setFontSize(opts.size||8.3); doc.setTextColor(SUB[0],SUB[1],SUB[2]);
+      let cy = y, i = 1;
+      const mc = opts.markerColor || [120,128,145];
+      items.forEach(txt=>{
+        const marker = opts.numbered ? (i+'.') : '•';
+        const mw = opts.numbered ? 13 : 9;
+        const lines = doc.splitTextToSize(txt, w-mw);
+        doc.setFont('helvetica','bold'); doc.setTextColor(mc[0],mc[1],mc[2]);
+        doc.text(marker, x, cy);
+        doc.setFont('helvetica','normal'); doc.setTextColor(SUB[0],SUB[1],SUB[2]);
+        doc.text(lines, x+mw, cy);
+        cy += lines.length*10.4 + 5.4;
+        i++;
+      });
+      return cy;
+    }
+
+    function pill(x, y, w, h, label, fill, textColor){
+      doc.setFillColor(fill[0],fill[1],fill[2]); doc.roundedRect(x,y,w,h,h/2,h/2,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.6); doc.setTextColor(textColor[0],textColor[1],textColor[2]);
+      doc.text(label, x+w/2, y+h/2+2.7, {align:'center'});
+    }
+
+    function footer(pageLabel, pg, total){
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.6); doc.setTextColor(150,150,158);
+      doc.text('MedRisk Lite — Quickstart Guide', margin, H-margin+16);
+      doc.text(pageLabel, W/2, H-margin+16, {align:'center'});
+      doc.text('Page ' + pg + ' of ' + total, W-margin, H-margin+16, {align:'right'});
+    }
+
+    /* ===================== PAGE 1 ===================== */
+    // Panel 1: Cover
+    panel(0,0,'MEDRISK LITE', PALETTE.navy, (x,y,w,h)=>{
+      doc.setFillColor(34,211,238); doc.roundedRect(x, y+2, 34, 34, 9, 9, 'F');
+      pulseIcon(doc, x+17, y+19, 11, [255,255,255], [34,211,238]);
+      doc.setFont('helvetica','bold'); doc.setFontSize(13.5); doc.setTextColor(INK[0],INK[1],INK[2]);
+      doc.text('Quickstart Guide', x, y+56);
+      doc.setFont('times','italic'); doc.setFontSize(9); doc.setTextColor(SUB[0],SUB[1],SUB[2]);
+      doc.text('FMEA risk assessment for the portable ultrasound probe.', x, y+72, {maxWidth:w});
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(140,146,160);
+      doc.text('Generated ' + new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}), x, y+h-6);
+    });
+    // Panel 2: Sign In & Setup
+    panel(1,0,'SIGN IN & SETUP', PALETTE.cyan, (x,y,w,h)=>{
+      pill(x, y, 92, 17, 'G  Google', [242,243,247], [40,44,54]);
+      pill(x+100, y, 78, 17, 'Guest', [8,145,178], [255,255,255]);
+      bulletsIn(x, y+30, w, [
+        'Choose Continue with Google or Continue as Guest — both reach the same shared risk data.',
+        'First-time sign-in asks for your company/product, known errors, and main question. Optional — you can skip it.',
+        'You land on the Dashboard, ready to work.'
+      ], {numbered:true, markerColor:[8,145,178]});
+    });
+    // Panel 3: Dashboard
+    panel(2,0,'DASHBOARD', PALETTE.amber, (x,y,w,h)=>{
+      bulletsIn(x, y, w, [
+        'Failure modes documented, average RPN, highest-risk item, live ISO 14971 compliance score.',
+        'ALARP breakdown donut chart, top 5 highest-risk items, and a recent activity feed.'
+      ], {markerColor:[180,83,9]});
+    });
+    // Panel 4: FMEA Workspace
+    panel(0,1,'FMEA WORKSPACE', PALETTE.purple, (x,y,w,h)=>{
+      const dotY = y+7, gap=30;
+      ['S','O','D'].forEach((L,i)=>{
+        doc.setFillColor(109,40,217); doc.circle(x+8+i*gap, dotY, 8, 'F');
+        doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
+        doc.text(L, x+8+i*gap, dotY+2.8, {align:'center'});
+      });
+      doc.setDrawColor(109,40,217); doc.setLineWidth(1); doc.line(x+8+2*gap+10, dotY, x+8+2*gap+26, dotY);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(109,40,217);
+      doc.text('RPN', x+8+2*gap+32, dotY+2.8);
+      bulletsIn(x, y+26, w, [
+        'Click the interactive probe diagram to filter failure modes by component.',
+        'Adjust Severity, Occurrence, Detectability — RPN and ALARP band recalculate instantly.',
+        '"Suggest Failure Modes" proposes curated candidates per component.'
+      ], {markerColor:[109,40,217]});
+    });
+    // Panel 5: Device Library & Risk Register
+    panel(1,1,'LIBRARY & REGISTER', PALETTE.green, (x,y,w,h)=>{
+      bulletsIn(x, y, w, [
+        'Device Library: the ultrasound probe\'s 9 components, plus "Coming Soon" device types.',
+        'Risk Register: the master table of every failure mode — search, filter by ALARP band, sort any column.'
+      ], {markerColor:[5,122,85]});
+    });
+    // Panel 6: All 9 tabs at a glance (built from the live VIEWS list)
+    panel(2,1,'ALL 9 TABS AT A GLANCE', PALETTE.slate, (x,y,w,h)=>{
+      const rowH2 = (h-2)/9;
+      VIEWS.forEach((v,i)=>{
+        const ry = y + i*rowH2 + 6;
+        const rgb = hexToRgb(v.color);
+        doc.setFillColor(rgb[0],rgb[1],rgb[2]); doc.circle(x+3, ry-2.6, 2.6, 'F');
+        doc.setFont('helvetica','bold'); doc.setFontSize(7.4); doc.setTextColor(INK[0],INK[1],INK[2]);
+        doc.text(v.label, x+10, ry);
+      });
+    });
+    footer('Getting Started', 1, 2);
+
+    /* ===================== PAGE 2 ===================== */
+    doc.addPage('a4','landscape');
+    // Panel 7: Analytics
+    panel(0,0,'ANALYTICS', PALETTE.blue, (x,y,w,h)=>{
+      const bh=[10,18,14,22,16], bw=9;
+      bh.forEach((bhh,i)=>{ doc.setFillColor(29,78,216); doc.rect(x+i*(bw+4), y+26-bhh, bw, bhh, 'F'); });
+      bulletsIn(x, y+34, w, [
+        'RPN bar chart and a per-component risk heatmap.',
+        'Saved risk snapshots for before/after comparison, plus the full timestamped audit trail.'
+      ], {markerColor:[29,78,216]});
+    });
+    // Panel 8: Compliance
+    panel(1,0,'COMPLIANCE', PALETTE.pink, (x,y,w,h)=>{
+      doc.setFillColor(190,24,93); doc.circle(x+11, y+11, 11, 'F');
+      doc.setFillColor(255,255,255); doc.circle(x+11, y+11, 6.5, 'F');
+      bulletsIn(x+30, y+3, w-30, [
+        'Tracks each ISO 14971:2019 clause as Complete, Partial, or Pending.'
+      ], {markerColor:[190,24,93]});
+      bulletsIn(x, y+30, w, [
+        'Live compliance score ring updates as clauses are completed.',
+        'Attach evidence files per clause, stored securely per record.'
+      ], {markerColor:[190,24,93]});
+    });
+    // Panel 9: AI Assistant
+    panel(2,0,'AI ASSISTANT', PALETTE.purple, (x,y,w,h)=>{
+      bulletsIn(x, y, w, [
+        'Chat about FMEA, the live data, or the app itself — free, built-in knowledge base.',
+        'Attach photos, PDFs or text files; speak with the microphone; use Triage to match a photo to a known failure mode.',
+        'Add your own free-tier API key in Settings for full open-ended AI chat.'
+      ], {markerColor:[109,40,217]});
+    });
+    // Panel 10: Report Generator
+    panel(0,1,'REPORT GENERATOR', PALETTE.amber, (x,y,w,h)=>{
+      bulletsIn(x, y, w, [
+        'One-click, ISO 14971-aligned FMEA Report PDF — cover, methodology, full data table, charts, and conclusion.',
+        'This Quickstart Guide — a plain-language walkthrough of every tab, exportable anytime.'
+      ], {markerColor:[180,83,9]});
+    });
+    // Panel 11: Settings
+    panel(1,1,'SETTINGS & DATA', PALETTE.slate, (x,y,w,h)=>{
+      bulletsIn(x, y, w, [
+        'API key and chat model, RPN band thresholds (ALARP / Unacceptable).',
+        'Export, import, or reset your data; manage your signed-in account.'
+      ], {markerColor:[51,65,85]});
+    });
+    // Panel 12: Support & Standards
+    panel(2,1,'SUPPORT & STANDARDS', PALETTE.navy, (x,y,w,h)=>{
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(SUB[0],SUB[1],SUB[2]);
+      doc.text('Referenced throughout this build:', x, y+6);
+      bulletsIn(x, y+12, w, ['ISO 14971:2019','IEC 60601-1','IEC 62366-1','ISO 13485:2016'], {markerColor:[15,23,42], size:7.8});
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.8); doc.setTextColor(INK[0],INK[1],INK[2]);
+      doc.text('Support: ' + CONTACT_INFO.email + (CONTACT_INFO.phone ? ('  ·  ' + CONTACT_INFO.phone) : ''), x, y+h-4, {maxWidth:w});
+    });
+    footer('Tab-by-Tab Reference', 2, 2);
+
+    doc.save('MedRiskLite_Quickstart_Guide.pdf');
+    status.textContent = 'Manual downloaded.';
+    log('App user manual generated and exported to PDF.');
+  }catch(err){
+    status.textContent = 'Manual generation failed - check your internet connection and try again.';
+    showToast('Manual generation failed: ' + err.message, true);
+  }
+}
+function hexToRgb(hex){
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+// Draws the MedRisk Lite "pulse" mark (concentric sonar rings + dot) as vector shapes, so the PDF logo matches the app icon/favicon.
+function pulseIcon(doc, cx, cy, maxR, fg, bg){
+  [{r:maxR, a:0.32},{r:maxR*0.68, a:0.62},{r:maxR*0.4, a:1}].forEach(s=>{
+    const col = [0,1,2].map(i => Math.round(fg[i]*s.a + bg[i]*(1-s.a)));
+    doc.setDrawColor(col[0],col[1],col[2]); doc.setLineWidth(Math.max(1.1, maxR*0.12));
+    doc.circle(cx, cy, s.r, 'S');
+  });
+  doc.setFillColor(fg[0],fg[1],fg[2]);
+  doc.circle(cx, cy, maxR*0.15, 'F');
+}
+
+async function generateReport(){
+  const status = document.getElementById('genStatus');
+  if(typeof window.jspdf === 'undefined'){
+    status.textContent = 'The PDF library did not load - check your internet connection and reload the page.';
+    showToast('PDF library did not load. Check your connection and reload the page.', true);
+    return;
+  }
+  status.textContent = 'Rendering report…';
+  try{
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const compScore = Math.round(state.compliance.reduce((a,c)=>a+STATUS_WEIGHT[c.status],0)/state.compliance.length);
+  const reportId = 'MRL-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+
+  /* ---------- COVER PAGE ---------- */
+  doc.setFillColor(10,14,22); doc.rect(0,0,W,H,'F');
+  doc.setFillColor(34,211,238); doc.rect(0,0,W,5,'F');
+  doc.setFillColor(139,92,246); doc.rect(0,5,W,2.5,'F');
+
+  doc.setFillColor(28,38,60); doc.roundedRect(W/2-32,90,64,64,14,14,'F');
+  doc.setDrawColor(34,211,238); doc.setLineWidth(1.2); doc.roundedRect(W/2-32,90,64,64,14,14,'S');
+  pulseIcon(doc, W/2, 122, 19, [34,211,238], [28,38,60]);
+
+  doc.setTextColor(255,255,255); doc.setFontSize(27); doc.setFont('helvetica','bold');
+  doc.text('MedRisk Lite', W/2, 195, {align:'center'});
+  doc.setFontSize(13); doc.setFont('times','italic'); doc.setTextColor(210,215,230);
+  doc.text('FMEA Risk Assessment Report', W/2, 216, {align:'center'});
+  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(140,215,225);
+  doc.text('Portable Ultrasound Probe  ·  ISO 14971:2019 Aligned', W/2, 234, {align:'center'});
+
+  // Metadata card: measure content first so the border always exactly fits what's inside it (no overflow, no dead space).
+  const compScoreLabel = compScore >= 70 ? 'Good' : compScore >= 40 ? 'In progress' : 'Early stage';
+  const metaLines = [
+    ['Report ID', reportId],
+    ['Generated', new Date().toLocaleString()],
+    ['Failure modes documented', String(state.failureModes.length)],
+    ['Compliance score at generation', compScore + '% (' + compScoreLabel + ')'],
+    ['Standards referenced', 'ISO 14971:2019 · IEC 60601-1 · IEC 62366-1 · ISO 13485:2016']
+  ];
+  doc.setFontSize(9);
+  const metaBoxW = 300, metaPadTop = 24, metaPadBottom = 20, metaTextW = metaBoxW - 32;
+  let measuredH = 0;
+  const metaMeasured = metaLines.map(([k,v])=>{
+    const lines = doc.splitTextToSize(String(v), metaTextW);
+    const rowH = 13 + lines.length*12 + 8;
+    measuredH += rowH;
+    return {k, lines, rowH};
+  });
+  const metaBoxY = 268, metaBoxH = metaPadTop + measuredH - 8 + metaPadBottom;
+  doc.setDrawColor(55,65,90); doc.setLineWidth(0.75);
+  doc.roundedRect(W/2-metaBoxW/2, metaBoxY, metaBoxW, metaBoxH, 8, 8, 'S');
+  let my = metaBoxY + metaPadTop;
+  metaMeasured.forEach(({k,lines})=>{
+    doc.setFont('helvetica','bold'); doc.setTextColor(140,215,225);
+    doc.text(k.toUpperCase(), W/2-metaBoxW/2+16, my);
+    doc.setFont('helvetica','normal'); doc.setTextColor(230,234,242);
+    doc.text(lines, W/2-metaBoxW/2+16, my+13);
+    my += 13 + lines.length*12 + 8;
+  });
+
+  doc.setFontSize(8.5); doc.setFont('times','italic'); doc.setTextColor(110,120,140);
+  doc.text('Generated automatically by MedRisk Lite — an independent FMEA risk-assessment tool.', W/2, H-34, {align:'center'});
+  doc.text('This report is a working risk-analysis artifact, not a certified regulatory submission.', W/2, H-22, {align:'center'});
+
+  /* ---------- PAGE 2: OBJECTIVES + COMPLIANCE ---------- */
+  doc.addPage();
+  doc.setTextColor(20,20,20);
+  doc.setFontSize(15); doc.setFont(undefined,'bold'); doc.text('Objectives', 40, 50);
+  doc.setDrawColor(210,210,215); doc.setLineWidth(0.5); doc.line(40,58,W-40,58);
+  doc.setFontSize(9.5); doc.setFont(undefined,'normal');
+  const objectives = [
+    'Provide a web-based FMEA platform for medical device risk assessment aligned with ISO 14971:2019.',
+    'Automate RPN calculation using Severity, Occurrence and Detectability scoring, eliminating manual errors.',
+    'Apply ALARP risk classification to auto-categorize risks as Acceptable, ALARP, or Unacceptable.',
+    'Document 15 failure modes for a portable ultrasound probe as the working data set.',
+    'Generate a regulatory-ready PDF risk report mappable to ISO 14971 risk-file requirements.',
+    'Provide a risk analytics dashboard with heatmaps and a live ISO 14971 compliance score tracker.'
+  ];
+  let y = 78;
+  objectives.forEach((o,i)=>{ doc.text((i+1)+'. '+o, 40, y, {maxWidth: W-80}); y += 22; });
+
+  if(y > H - 120){ doc.addPage(); y = 50; }
+  doc.setFontSize(15); doc.setFont('helvetica','bold'); doc.setTextColor(20,20,20); doc.text('ISO 14971:2019 Compliance Summary', 40, y+18);
+  doc.setDrawColor(210,210,215); doc.line(40,y+26,W-40,y+26);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Live compliance score at time of generation: ' + compScore + '%', 40, y+44);
+  let cy = y+64;
+  state.compliance.forEach(c=>{
+    if(cy > H - 60){ doc.addPage(); cy = 50; }
+    doc.setFontSize(9);
+    doc.setTextColor(90,90,90);
+    doc.text(c.clause + ' — ' + c.title, 46, cy);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(c.status==='complete'?[30,140,90]:c.status==='partial'?[190,120,10]:[190,60,70]);
+    doc.text(c.status.toUpperCase(), W-90, cy);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(20,20,20);
+    cy += 15;
+  });
+
+  doc.addPage();
+  doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.text('Failure Mode and Effects Analysis — Portable Ultrasound Probe', 40, 40);
+  const rows = state.failureModes.map(f=>[f.id, COMP(f.componentId).name, f.mode, f.effect, f.cause, f.S, f.O, f.D, rpn(f), classify(rpn(f))]);
+  doc.autoTable({
+    startY: 55, margin:{left:30,right:30},
+    head:[['#','Component','Failure Mode','Effect','Cause','S','O','D','RPN','ALARP']],
+    body: rows, styles:{fontSize:6.8, cellPadding:3, overflow:'linebreak'},
+    headStyles:{fillColor:[27,35,56], textColor:255, fontSize:7},
+    columnStyles:{0:{cellWidth:16},2:{cellWidth:80},3:{cellWidth:80},4:{cellWidth:70},5:{cellWidth:14},6:{cellWidth:14},7:{cellWidth:14},8:{cellWidth:22},9:{cellWidth:46}}
+  });
+
+  doc.addPage();
+  doc.setTextColor(20,20,20);
+  doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.text('RPN Distribution', 40, 40);
+  doc.setDrawColor(210,210,215); doc.setLineWidth(0.5); doc.line(40,48,W-40,48);
+  const chartImgW = 500, chartImgH = 220, chartX = (W-chartImgW)/2;
+  let afterChartY;
+  try{
+    if(typeof Chart === 'undefined') throw new Error('chart-lib-missing');
+    const tmpCanvas = document.createElement('canvas'); tmpCanvas.width=1000; tmpCanvas.height=440;
+    const sorted = [...state.failureModes].sort((a,b)=>rpn(b)-rpn(a));
+    const tmpChart = new Chart(tmpCanvas, {
+      type:'bar',
+      data:{ labels: sorted.map(f=>'#'+f.id), datasets:[{data: sorted.map(f=>rpn(f)), backgroundColor: sorted.map(f=>bandColor(classify(rpn(f))))}] },
+      options:{ animation:false, responsive:false, plugins:{legend:{display:false}}, layout:{padding:8}, scales:{y:{beginAtZero:true, ticks:{font:{size:16}}}, x:{ticks:{font:{size:14}}}} }
+    });
+    await new Promise(r=>setTimeout(r,250));
+    doc.addImage(tmpCanvas.toDataURL('image/png'), 'PNG', chartX, 66, chartImgW, chartImgH);
+    tmpChart.destroy();
+    doc.setFontSize(8); doc.setFont('times','italic'); doc.setTextColor(120,120,120);
+    doc.text('Figure 1 — RPN (Severity × Occurrence × Detectability) for all documented failure modes, sorted highest to lowest.', W/2, 66+chartImgH+16, {align:'center'});
+    // small colour-key legend under the caption, centered as a group
+    const legend = [['Acceptable', bandColor('Acceptable')], ['ALARP', bandColor('ALARP')], ['Unacceptable', bandColor('Unacceptable')]];
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    const textW = s => doc.getStringUnitWidth(s) * 8 / doc.internal.scaleFactor;
+    const legendW = legend.reduce((a,[l])=>a+textW(l)+22, 0);
+    let lx = W/2 - legendW/2;
+    legend.forEach(([label,hex])=>{
+      const rgb = hexToRgb(hex);
+      doc.setFillColor(rgb[0],rgb[1],rgb[2]); doc.circle(lx+4, 66+chartImgH+30-3, 3.5, 'F');
+      doc.setTextColor(70,70,70); doc.text(label, lx+12, 66+chartImgH+30);
+      lx += textW(label) + 22;
+    });
+    afterChartY = 66+chartImgH+48;
+  }catch(chartErr){
+    doc.setFontSize(9.5); doc.setFont('helvetica','normal'); doc.setTextColor(120,120,120);
+    doc.text('Chart could not be generated for this report — check your internet connection and regenerate.', 40, 70);
+    afterChartY = 96;
+  }
+
+  doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(20,20,20); doc.text('Mitigation Notes', 40, afterChartY);
+  doc.setDrawColor(210,210,215); doc.setLineWidth(0.5); doc.line(40,afterChartY+8,W-40,afterChartY+8);
+  doc.autoTable({
+    startY: afterChartY+18, margin:{left:30,right:30},
+    head:[['#','Failure Mode','Mitigation']],
+    body: state.failureModes.map(f=>[f.id, f.mode, f.mitigation]),
+    styles:{fontSize:7.2, cellPadding:3, overflow:'linebreak'},
+    headStyles:{fillColor:[27,35,56], textColor:255, fontSize:7.5},
+    columnStyles:{0:{cellWidth:16},1:{cellWidth:150}}
+  });
+
+  /* ---------- FINAL PAGE: SUMMARY, CONCLUSION & SIGN-OFF ---------- */
+  doc.addPage();
+  doc.setTextColor(20,20,20);
+  doc.setFontSize(16); doc.setFont(undefined,'bold'); doc.text('Summary & Conclusion', 40, 50);
+  doc.setDrawColor(210,210,215); doc.setLineWidth(0.5); doc.line(40,58,W-40,58);
+
+  const bandsFinal = {Acceptable:0, ALARP:0, Unacceptable:0};
+  state.failureModes.forEach(f=>bandsFinal[classify(rpn(f))]++);
+  const avgRpnFinal = Math.round(state.failureModes.reduce((a,f)=>a+rpn(f),0)/state.failureModes.length);
+  const topFinal = [...state.failureModes].sort((a,b)=>rpn(b)-rpn(a))[0];
+
+  doc.setFontSize(10.5); doc.setFont(undefined,'bold'); doc.text('Key figures', 40, 80);
+  doc.setFont(undefined,'normal'); doc.setFontSize(9.5);
+  const statLines = [
+    'Total failure modes documented: ' + state.failureModes.length + ' across ' + COMPONENTS.length + ' probe components.',
+    'Average RPN across all failure modes: ' + avgRpnFinal + '.',
+    'Risk breakdown: ' + bandsFinal.Acceptable + ' Acceptable, ' + bandsFinal.ALARP + ' ALARP, ' + bandsFinal.Unacceptable + ' Unacceptable.',
+    'Highest-priority item: "' + topFinal.mode + '" (' + COMP(topFinal.componentId).name + '), RPN ' + rpn(topFinal) + '.',
+    'Live ISO 14971:2019 compliance score at generation: ' + compScore + '%.'
+  ];
+  let sy = 96;
+  statLines.forEach(s=>{ const lines = doc.splitTextToSize('•  '+s, W-90); doc.text(lines, 46, sy); sy += lines.length*14 + 4; });
+
+  doc.setFontSize(10.5); doc.setFont('helvetica','bold'); doc.text('Conclusion', 40, sy+14);
+  doc.setFont('times','italic'); doc.setFontSize(9.8);
+  const conclusionLines = doc.splitTextToSize(
+    'MedRisk Lite closes a gap in affordable, ISO-aligned FMEA tooling for diagnostic imaging devices. By combining the ' +
+    'portable ultrasound probe with automated RPN scoring, ALARP classification, a live compliance tracker, and regulatory-ready ' +
+    'report generation, it delivers practical, measurable risk-management value at virtually zero cost. Items marked ALARP or ' +
+    'Unacceptable above should be prioritized for mitigation and re-scored once controls are implemented.',
+    W-80
+  );
+  doc.text(conclusionLines, 40, sy+30);
+
+  let signY = sy + 30 + conclusionLines.length*13 + 50;
+  if(signY > H-140) signY = H-140;
+  doc.setDrawColor(150,150,150); doc.setLineWidth(0.6);
+  doc.line(40, signY, 230, signY);
+  doc.line(W-230, signY, W-40, signY);
+  doc.setFontSize(9); doc.setTextColor(80,80,80);
+  doc.text('Prepared by — Name & Signature', 40, signY+13);
+  doc.text('Reviewed by — Name & Signature', W-230, signY+13);
+  doc.text('Date: ______________________', 40, signY+38);
+  doc.text('Date: ______________________', W-230, signY+38);
+
+  /* ---------- FOOTER (page numbers, all pages after cover) ---------- */
+  const totalPages = doc.internal.getNumberOfPages();
+  for(let p=2;p<=totalPages;p++){
+    doc.setPage(p);
+    doc.setFontSize(8); doc.setTextColor(150,150,150);
+    doc.text('MedRisk Lite — FMEA Risk Assessment Report  ·  ' + reportId, 40, H-20);
+    doc.text('Page ' + p + ' of ' + totalPages, W-40, H-20, {align:'right'});
+  }
+
+  doc.save('MedRiskLite_UltrasoundProbe_FMEA_Report.pdf');
+  status.textContent = 'PDF downloaded.';
+  log('FMEA report generated and exported to PDF.');
+  }catch(err){
+    status.textContent = 'Report generation failed - check your internet connection and try again.';
+    showToast('Report generation failed: ' + err.message, true);
+  }
+}
+
+/* ============================= SETTINGS ============================= */
+function renderSettings(){
+  document.getElementById('view-root').innerHTML = `
+    <div class="grid grid-cols-2 gap-5">
+      <div class="card p-5">
+        <h3 class="font-bold mb-3 text-[13.5px]">AI Assistant</h3>
+        <label class="text-[11.5px] font-semibold block mb-1 text-white/70">Anthropic API Key</label>
+        <input id="apiKeyInput" type="password" value="${esc(apiKey)}" placeholder="sk-ant-..." class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[12.5px] w-full mb-2 placeholder-white/25">
+        <div class="text-[10.5px] text-white/40 mb-3 leading-relaxed">Stored only in this browser and sent directly to Anthropic when you chat, never through any other server. Get a key at console.anthropic.com. Leave blank to use the basic built-in FAQ assistant instead.</div>
+        <label class="text-[11.5px] font-semibold block mb-1 text-white/70">Model</label>
+        <select id="modelSelect" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[12.5px] w-full mb-3">
+          <option value="claude-sonnet-5" ${chatModel==='claude-sonnet-5'?'selected':''}>Claude Sonnet 5 (recommended)</option>
+          <option value="claude-opus-5" ${chatModel==='claude-opus-5'?'selected':''}>Claude Opus 5 (most capable)</option>
+          <option value="claude-haiku-4-5-20251001" ${chatModel==='claude-haiku-4-5-20251001'?'selected':''}>Claude Haiku 4.5 (fastest)</option>
+        </select>
+        <div class="flex gap-2">
+          <button id="saveApiKey" class="flex-1 px-4 py-2 rounded-lg text-[12px] font-semibold" style="background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#06121a;">Save</button>
+          <button id="clearApiKey" class="flex-1 px-4 py-2 rounded-lg text-[12px] font-semibold bg-white/5 hover:bg-white/10">Clear Key</button>
+        </div>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-bold mb-3 text-[13.5px]">RPN Scoring Configuration</h3>
+        <label class="text-[11.5px] font-semibold block mb-1 text-white/70">ALARP begins at RPN ≥</label>
+        <input id="alarpFrom" type="number" min="1" max="1000" value="${state.settings.alarpFrom}" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[12.5px] w-full mb-3">
+        <label class="text-[11.5px] font-semibold block mb-1 text-white/70">Unacceptable begins at RPN ≥</label>
+        <input id="unaccFrom" type="number" min="1" max="1000" value="${state.settings.unacceptableFrom}" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[12.5px] w-full mb-3">
+        <button id="saveThresh" class="px-4 py-2 rounded-lg text-[12px] font-semibold bg-white/5 hover:bg-white/10">Save Thresholds</button>
+        <div class="text-[11px] text-white/40 mt-4 leading-relaxed">Severity, Occurrence and Detectability are each rated 1–10: 1 = negligible / rare / almost certain to detect, 10 = catastrophic / very frequent / cannot detect. RPN = S × O × D.</div>
+      </div>
+    </div>
+    <div class="card p-5 mt-5">
+      <h3 class="font-bold mb-3 text-[13.5px]">Account</h3>
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-[13px] font-semibold">${currentUser ? (currentUser.isGuest ? 'Signed in as Guest' : ('Signed in as ' + esc(currentUser.email))) : 'Not signed in'}</div>
+          <div class="text-[11px] text-white/40 mt-0.5">${sb ? ('Cloud sync is ' + (cloudConnected ? 'active.' : 'inactive.')) : 'Cloud backend not connected.'}</div>
+        </div>
+        <button id="logoutBtn" class="px-4 py-2 rounded-lg text-[12px] font-semibold bg-white/5 hover:bg-white/10">Logout</button>
+      </div>
+      <div class="text-[10.5px] text-white/35 mt-3 leading-relaxed">Support contact: ${esc(CONTACT_INFO.email)}${CONTACT_INFO.phone ? (' · ' + esc(CONTACT_INFO.phone)) : ''}</div>
+    </div>
+    <div class="card p-5 mt-5">
+      <h3 class="font-bold mb-3 text-[13.5px]">Data Management</h3>
+      <div class="flex gap-2">
+        <button id="exportData" class="flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold bg-white/5 hover:bg-white/10">Export JSON</button>
+        <label class="flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold text-center cursor-pointer bg-white/5 hover:bg-white/10">Import JSON<input id="importData" type="file" accept="application/json" class="hidden"></label>
+        <button id="resetData" class="flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold" style="background:rgba(251,113,133,.14);color:#fb7185;">Reset Demo Data</button>
+      </div>
+      <div class="text-[10.5px] text-white/35 mt-3">Exported data never includes your API key.</div>
+    </div>`;
+  document.getElementById('saveApiKey').addEventListener('click', ()=>{
+    apiKey = document.getElementById('apiKeyInput').value.trim();
+    chatModel = document.getElementById('modelSelect').value;
+    state.settings.chatModel = chatModel;
+    if(apiKey) localStorage.setItem(APIKEY_STORE, apiKey); else localStorage.removeItem(APIKEY_STORE);
+    saveState();
+    renderSettings();
+  });
+  document.getElementById('clearApiKey').addEventListener('click', ()=>{
+    apiKey=''; localStorage.removeItem(APIKEY_STORE); renderSettings();
+  });
+  document.getElementById('saveThresh').addEventListener('click', ()=>{
+    state.settings.alarpFrom = +document.getElementById('alarpFrom').value;
+    state.settings.unacceptableFrom = +document.getElementById('unaccFrom').value;
+    log('Scoring thresholds updated - ALARP >= '+state.settings.alarpFrom+', Unacceptable >= '+state.settings.unacceptableFrom+'.');
+  });
+  document.getElementById('exportData').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'medrisklite-data.json'; a.click();
+  });
+  document.getElementById('importData').addEventListener('change', e=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ try{ state = Object.assign(defaultState(), JSON.parse(reader.result)); saveState(); navigate('settings'); }catch(err){ alert('Invalid file.'); } };
+    reader.readAsText(file);
+  });
+  document.getElementById('resetData').addEventListener('click', ()=>{
+    if(confirm('Reset all data back to the seeded demo dataset?')){ state = defaultState(); saveState(); navigate('dashboard'); }
+  });
+  const logoutBtn = document.getElementById('logoutBtn');
+  if(logoutBtn) logoutBtn.addEventListener('click', logoutUser);
+}
+
+/* ============================= AUTH ============================= */
+let currentUser = null;
+let appStarted = false;
+
+function startApp(){
+  if(appStarted) return; appStarted = true;
+  buildNav();
+  navigate(state.lastView && state.lastView!=='projects' ? state.lastView : 'dashboard');
+  bootstrapCloud();
+}
+
+function showAuthOverlay(show){ const el=document.getElementById('authOverlay'); if(el) el.style.display = show ? 'flex' : 'none'; }
+function showOnboardingOverlay(show){ const el=document.getElementById('onboardingOverlay'); if(el) el.style.display = show ? 'flex' : 'none'; }
+function showAuthErr(msg){ const el=document.getElementById('authError'); if(el){ el.textContent = msg; el.classList.remove('hidden'); } }
+
+async function initAuth(){
+  if(!sb){ showAuthOverlay(false); startApp(); return; }
+  wireAuthButtons();
+  try{
+    sb.auth.onAuthStateChange((event, session)=>{
+      if(session && session.user){ onLoggedIn(session.user); }
+    });
+    const { data } = await sb.auth.getSession();
+    if(data && data.session && data.session.user){ onLoggedIn(data.session.user); }
+    else { showAuthOverlay(true); }
+  }catch(e){
+    showAuthOverlay(false); startApp();
+  }
+}
+
+const LOGIN_SLIDES = [
+  { title:'See Every Risk Before<br>It Becomes One', sub:'MedRisk Lite gives you a live command center for ultrasound-probe risk — RPN scoring, ALARP classification and compliance tracking, all in one place.' },
+  { title:'Meet Roger,<br>Your Built-In Assistant', sub:'Roger answers FMEA and app questions for free, no setup required — upgrade to full AI chat anytime with your own API key.' },
+  { title:'One-Click<br>Regulatory Reports', sub:'Generate ISO 14971-aligned FMEA reports and app user manuals as polished PDFs, ready to share with a mentor or reviewer.' }
+];
+let loginSlideIdx = 0;
+let loginSlideTimer = null;
+function renderLoginDots(){
+  const wrap = document.getElementById('loginDots');
+  if(!wrap) return;
+  wrap.innerHTML = LOGIN_SLIDES.map((_,i)=>`<button data-slide="${i}" aria-label="Show highlight ${i+1}" class="rounded-full" style="width:${i===loginSlideIdx?18:5}px;height:5px;background:${i===loginSlideIdx?'linear-gradient(135deg,var(--brand),var(--brand-2))':'rgba(255,255,255,.25)'};transition:width .2s ease;"></button>`).join('');
+  wrap.querySelectorAll('[data-slide]').forEach(b=>b.addEventListener('click', ()=>{ goToLoginSlide(+b.dataset.slide); restartLoginSlideTimer(); }));
+}
+function goToLoginSlide(i){
+  loginSlideIdx = i;
+  const t = document.getElementById('loginSlideTitle'), s = document.getElementById('loginSlideSub');
+  if(t) t.innerHTML = LOGIN_SLIDES[i].title;
+  if(s) s.textContent = LOGIN_SLIDES[i].sub;
+  renderLoginDots();
+}
+function restartLoginSlideTimer(){
+  if(loginSlideTimer) clearInterval(loginSlideTimer);
+  loginSlideTimer = setInterval(()=>{ goToLoginSlide((loginSlideIdx+1) % LOGIN_SLIDES.length); }, 4500);
+}
+
+function wireAuthButtons(){
+  renderLoginDots();
+  restartLoginSlideTimer();
+  const themeBtn = document.getElementById('loginThemeToggle');
+  if(themeBtn) themeBtn.addEventListener('click', ()=>{
+    const panel = document.getElementById('loginFormPanel');
+    const isLight = panel.classList.toggle('light');
+    document.getElementById('loginThemeIcon').textContent = isLight ? '☀️' : '🌙';
+    document.getElementById('loginThemeLabel').textContent = isLight ? 'Light' : 'Dark';
+  });
+  const gBtn = document.getElementById('googleLoginBtn');
+  const guestBtn = document.getElementById('guestLoginBtn');
+  if(gBtn) gBtn.addEventListener('click', async ()=>{
+    try{ const { error } = await sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href } }); if(error) throw error; }
+    catch(e){ showAuthErr('Google sign-in is not enabled yet on the backend — see Settings once inside as Guest for setup notes.'); }
+  });
+  if(guestBtn) guestBtn.addEventListener('click', async ()=>{
+    try{ const { error } = await sb.auth.signInAnonymously(); if(error) throw error; }
+    catch(e){ showAuthErr('Guest login is not enabled yet on the backend — enable Anonymous Sign-Ins in Supabase Auth settings.'); }
+  });
+}
+
+function onLoggedIn(user){
+  currentUser = { id:user.id, email:user.email || null, isGuest: !user.email };
+  showAuthOverlay(false);
+  const seenKey = 'medriskLiteOnboarded_' + user.id;
+  if(!localStorage.getItem(seenKey)){
+    showOnboardingOverlay(true);
+    wireOnboarding(seenKey);
+  } else {
+    startApp();
+  }
+}
+
+function wireOnboarding(seenKey){
+  const submitBtn = document.getElementById('obSubmit');
+  const skipBtn = document.getElementById('obSkip');
+  if(submitBtn) submitBtn.onclick = ()=>submitOnboarding(seenKey);
+  if(skipBtn) skipBtn.onclick = ()=>{ localStorage.setItem(seenKey,'1'); showOnboardingOverlay(false); startApp(); };
+}
+
+function submitOnboarding(seenKey){
+  const entry = {
+    ts: Date.now(),
+    user: (currentUser && currentUser.email) || 'Guest',
+    company: (document.getElementById('obCompany').value || '').trim(),
+    errors: (document.getElementById('obErrors').value || '').trim(),
+    question: (document.getElementById('obQuestion').value || '').trim()
+  };
+  if(!state.onboardingResponses) state.onboardingResponses = [];
+  state.onboardingResponses.unshift(entry);
+  if(state.onboardingResponses.length > 50) state.onboardingResponses = state.onboardingResponses.slice(0,50);
+  log('New user onboarded: ' + entry.user + (entry.company ? (' — ' + entry.company) : ''));
+  localStorage.setItem(seenKey, '1');
+  showOnboardingOverlay(false);
+  startApp();
+}
+
+async function logoutUser(){
+  try{ if(sb) await sb.auth.signOut(); }catch(e){}
+  location.reload();
+}
+
+/* ============================= INIT ============================= */
+startApp();
+
+async function bootstrapCloud(){
+  const el = document.getElementById('save-indicator');
+  if(!sb){
+    if(el) el.textContent = 'Local storage only';
+    return;
+  }
+  try{
+    const { data, error } = await sb.from('app_state').select('data').eq('id', 1).maybeSingle();
+    if(error) throw error;
+    if(data && data.data){
+      const def = defaultState();
+      state = Object.assign(def, data.data, {settings: Object.assign(def.settings, (data.data.settings||{}))});
+      cloudConnected = true;
+      saveState();
+      navigate(state.lastView && state.lastView!=='projects' ? state.lastView : 'dashboard');
+      if(el) el.textContent = 'Synced from cloud';
+    } else {
+      cloudConnected = true;
+      await syncStateToCloud();
+    }
+  }catch(e){
+    if(el) el.textContent = 'Local storage only (cloud unavailable)';
+    showToast('Could not reach the cloud database - working from local storage only.', true);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+// MedRisk Lite — Prisma schema (Phase 1)
+// Per Knowledge Base §2.3: real per-user/workspace data, Clerk-verified access.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkUserId String   @unique
+  email       String
+  name        String?
+  createdAt   DateTime @default(now())
+
+  memberships WorkspaceMember[]
+  auditLogs   AuditLogEntry[]
+  failureModesCreated FailureMode[] @relation("FailureModeCreatedBy")
+  snapshotsCreated    Snapshot[]    @relation("SnapshotCreatedBy")
+  evidenceUploaded    Evidence[]    @relation("EvidenceUploadedBy")
+  onboardingResponses OnboardingResponse[]
+}
+
+model Workspace {
+  id               String   @id @default(cuid())
+  name             String
+  ownerId          String
+  alarpFrom        Int      @default(50)
+  unacceptableFrom Int      @default(100)
+  chatScope        String   @default("redirect") // 'redirect' | 'refuse', see KB §7.3
+  sheathApplied    Boolean  @default(true)
+  chatModel        String   @default("claude-sonnet-5")
+  createdAt        DateTime @default(now())
+
+  members      WorkspaceMember[]
+  failureModes FailureMode[]
+  compliance   ComplianceClause[]
+  auditLog     AuditLogEntry[]
+  snapshots    Snapshot[]
+  onboardingResponses OnboardingResponse[]
+  sensorReadings      SensorReading[]
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String   @default("owner") // 'owner' | 'member'
+  joinedAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model FailureMode {
+  id          String   @id @default(cuid())
+  workspaceId String
+  componentId String   // references the static COMPONENTS list (id), not a DB table
+  mode        String
+  effect      String
+  cause       String
+  standard    String
+  s           Int
+  o           Int
+  d           Int
+  mitigation  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("FailureModeCreatedBy", fields: [createdById], references: [id])
+
+  sensorReadings SensorReading[]
+}
+
+model ComplianceClause {
+  id          String @id @default(cuid())
+  workspaceId String
+  clause      String // e.g. "Cl.4"
+  title       String
+  mapped      String
+  status      String // 'complete' | 'partial' | 'pending'
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  evidence  Evidence[]
+}
+
+model Evidence {
+  id                 String   @id @default(cuid())
+  complianceClauseId String
+  fileUrl            String
+  fileName           String
+  uploadedById       String
+  uploadedAt         DateTime @default(now())
+
+  clause     ComplianceClause @relation(fields: [complianceClauseId], references: [id], onDelete: Cascade)
+  uploadedBy User             @relation("EvidenceUploadedBy", fields: [uploadedById], references: [id])
+}
+
+model Snapshot {
+  id          String   @id @default(cuid())
+  workspaceId String
+  label       String
+  statsJson   Json
+  createdAt   DateTime @default(now())
+  createdById String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("SnapshotCreatedBy", fields: [createdById], references: [id])
+}
+
+model OnboardingResponse {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  company     String?
+  errors      String?
+  question    String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model AuditLogEntry {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  text        String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+// Hardware sensor prototype (ESP32 + moisture/temperature sensors). Readings are
+// authenticated via HARDWARE_DEVICE_KEY (see routes/hardware.js), not Clerk.
+model SensorReading {
+  id                    String   @id @default(cuid())
+  workspaceId           String
+  sensorType            String   // e.g. "moisture" | "temperature"
+  value                 Float
+  thresholdBreached     Boolean  @default(false)
+  relatedFailureModeId  String?
+  createdAt             DateTime @default(now())
+
+  workspace          Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  relatedFailureMode FailureMode? @relation(fields: [relatedFailureModeId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, sensorType, createdAt])
+}
