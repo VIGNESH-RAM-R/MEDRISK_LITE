@@ -16,7 +16,7 @@ import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { useTranslation } from "react-i18next";
 import { Logo } from "../components/Logo";
-import { GoogleIcon } from "../components/OAuthIcons";
+import { AppleIcon, GoogleIcon, MicrosoftIcon } from "../components/OAuthIcons";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { useTheme } from "../lib/theme";
 
@@ -244,6 +244,30 @@ function HeroPanel() {
   );
 }
 
+type OAuthProvider = "google" | "microsoft" | "apple";
+
+const OAUTH_STRATEGY: Record<OAuthProvider, "oauth_google" | "oauth_microsoft" | "oauth_apple"> = {
+  google: "oauth_google",
+  microsoft: "oauth_microsoft",
+  apple: "oauth_apple",
+};
+
+const OAUTH_ERROR_KEY: Record<OAuthProvider, string> = {
+  google: "signIn.googleSignInFailed",
+  microsoft: "signIn.microsoftSignInFailed",
+  apple: "signIn.appleSignInFailed",
+};
+
+// Brand buttons stay fixed to each provider's own guidelines (white for
+// Google/Microsoft, black for Apple) rather than following the app's light/
+// dark theme — blending them into the app's own (fairly low-contrast) surface
+// tones was what made this row unreadable in dark mode.
+const OAUTH_BUTTON_STYLE: Record<OAuthProvider, { bg: string; border: string; ink: string }> = {
+  google: { bg: "#ffffff", border: "#dadce0", ink: "#1f1f1f" },
+  microsoft: { bg: "#ffffff", border: "#dadce0", ink: "#1f1f1f" },
+  apple: { bg: "#000000", border: "#000000", ink: "#ffffff" },
+};
+
 export function SignInScreen() {
   useWarmUpBrowser();
   const { colors, isDark } = useTheme();
@@ -251,9 +275,18 @@ export function SignInScreen() {
   const { width } = useWindowDimensions();
   const showHero = Platform.OS === "web" && width >= 860;
 
+  // Recessed relative to the card (colors.surface): the shared theme's
+  // surface/surface2 tones sit only ~3% apart in dark mode, so inputs and the
+  // card they sit on were nearly indistinguishable. These stay local to this
+  // screen rather than changing the shared theme tokens app-wide.
+  const fieldBg = isDark ? "#262b38" : colors.surface2;
+  const fieldBorder = isDark ? "rgba(255,255,255,.14)" : colors.border;
+
   const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
   const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();
   const { startOAuthFlow: startGoogleFlow } = useOAuth({ strategy: "oauth_google" });
+  const { startOAuthFlow: startMicrosoftFlow } = useOAuth({ strategy: "oauth_microsoft" });
+  const { startOAuthFlow: startAppleFlow } = useOAuth({ strategy: "oauth_apple" });
 
   const [mode, setMode] = useState<"sign-in" | "sign-up" | "verify">("sign-in");
   const [email, setEmail] = useState("");
@@ -261,51 +294,68 @@ export function SignInScreen() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [googleBusy, setGoogleBusy] = useState(false);
+  const [oauthBusy, setOauthBusy] = useState<OAuthProvider | null>(null);
 
   const isWebSsoCallback =
     Platform.OS === "web" &&
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("sso_callback") === "1";
 
-  const handleGoogle = useCallback(async () => {
-    setError(null);
-    setGoogleBusy(true);
+  const oauthStartFlow: Record<OAuthProvider, typeof startGoogleFlow> = {
+    google: startGoogleFlow,
+    microsoft: startMicrosoftFlow,
+    apple: startAppleFlow,
+  };
 
-    // expo-web-browser's openAuthSessionAsync (used internally by useOAuth's
-    // startOAuthFlow) is native-only and throws on web. On web, Clerk's own
-    // full-page redirect flow is used instead — the browser navigates away
-    // and back with ?sso_callback=1, and AuthenticateWithRedirectCallback
-    // below completes it and lands back on this exact URL (query stripped).
-    if (Platform.OS === "web") {
+  const handleOAuth = useCallback(
+    async (provider: OAuthProvider) => {
+      setError(null);
+
+      // expo-web-browser's openAuthSessionAsync (used internally by useOAuth's
+      // startOAuthFlow) is native-only and throws on web. On web, Clerk's own
+      // full-page redirect flow is used instead — the browser navigates away
+      // and back with ?sso_callback=1, and AuthenticateWithRedirectCallback
+      // below completes it and lands back on this exact URL (query stripped).
+      if (Platform.OS === "web") {
+        // Bail out (with visible feedback) before flipping the busy flag —
+        // returning early *after* setOauthBusy(true) here previously left the
+        // button spinning forever with no way out if Clerk hadn't finished
+        // loading yet on the first click.
+        if (!signInLoaded) {
+          setError(t("signIn.authNotReady"));
+          return;
+        }
+        setOauthBusy(provider);
+        try {
+          const base = `${window.location.origin}${window.location.pathname}`;
+          await signIn.authenticateWithRedirect({
+            strategy: OAUTH_STRATEGY[provider],
+            redirectUrl: `${base}?sso_callback=1`,
+            redirectUrlComplete: base,
+          });
+        } catch (e: any) {
+          setError(e?.errors?.[0]?.message || t(OAUTH_ERROR_KEY[provider]));
+          setOauthBusy(null);
+        }
+        return;
+      }
+
+      setOauthBusy(provider);
       try {
-        if (!signInLoaded) return;
-        const base = `${window.location.origin}${window.location.pathname}`;
-        await signIn.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: `${base}?sso_callback=1`,
-          redirectUrlComplete: base,
+        const { createdSessionId, setActive } = await oauthStartFlow[provider]({
+          redirectUrl: Linking.createURL("/"),
         });
+        if (createdSessionId && setActive) {
+          await setActive({ session: createdSessionId });
+        }
       } catch (e: any) {
-        setError(e?.errors?.[0]?.message || t("signIn.googleSignInFailed"));
-        setGoogleBusy(false);
+        setError(e?.errors?.[0]?.message || t(OAUTH_ERROR_KEY[provider]));
+      } finally {
+        setOauthBusy(null);
       }
-      return;
-    }
-
-    try {
-      const { createdSessionId, setActive } = await startGoogleFlow({
-        redirectUrl: Linking.createURL("/"),
-      });
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-      }
-    } catch (e: any) {
-      setError(e?.errors?.[0]?.message || t("signIn.googleSignInFailed"));
-    } finally {
-      setGoogleBusy(false);
-    }
-  }, [signIn, signInLoaded, startGoogleFlow]);
+    },
+    [signIn, signInLoaded, startGoogleFlow, startMicrosoftFlow, startAppleFlow, t]
+  );
 
   async function handleSignIn() {
     if (!signInLoaded) return;
@@ -402,132 +452,155 @@ export function SignInScreen() {
             width: showHero ? "42%" : "100%",
             padding: 30,
             backgroundColor: colors.surface,
+            gap: 22,
           }}
         >
-          <View className="flex-row items-center justify-between mb-5">
-            <View className="flex-row items-center gap-2.5">
-              <Logo size={30} />
+          <View style={{ gap: 22 }}>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-2.5">
+                <Logo size={30} />
+                <Text
+                  className="font-display text-[15px]"
+                  style={{ color: isDark ? "#eef1f8" : "#12172a" }}
+                >
+                  MedRisk Lite
+                </Text>
+              </View>
+              <ThemeToggle size={32} />
+            </View>
+
+            <View style={{ gap: 6 }}>
               <Text
-                className="font-display text-[15px]"
+                className="font-display text-[24px] leading-tight"
                 style={{ color: isDark ? "#eef1f8" : "#12172a" }}
               >
-                MedRisk Lite
+                {t("signIn.welcomeTitle")}
+              </Text>
+              <Text
+                className="text-[12.5px] leading-relaxed"
+                style={{ color: isDark ? "rgba(238,241,248,.55)" : "#6b7280" }}
+              >
+                {t("signIn.welcomeSub")}
               </Text>
             </View>
-            <ThemeToggle size={32} />
           </View>
 
-          <Text
-            className="font-display text-[24px] leading-tight"
-            style={{ color: isDark ? "#eef1f8" : "#12172a" }}
-          >
-            {t("signIn.welcomeTitle")}
-          </Text>
-          <Text
-            className="text-[12.5px] mt-2 mb-6 leading-relaxed"
-            style={{ color: isDark ? "rgba(238,241,248,.55)" : "#6b7280" }}
-          >
-            {t("signIn.welcomeSub")}
-          </Text>
-
           {mode !== "verify" && (
-            <>
-              <TouchableOpacity
-                onPress={handleGoogle}
-                disabled={googleBusy}
-                className="flex-row items-center justify-center rounded-xl py-3 mb-4"
-                style={{
-                  backgroundColor: colors.surface2,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                }}
-              >
-                {googleBusy ? (
-                  <ActivityIndicator color="#1f1f1f" />
-                ) : (
-                  <>
-                    <GoogleIcon size={16} />
-                    <Text className="text-[13px] ml-2.5 font-sans-semibold" style={{ color: "#1f1f1f" }}>
-                      {t("signIn.continueWithGoogle")}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+            <View style={{ gap: 18 }}>
+              <View style={{ gap: 10 }}>
+                {(["google", "microsoft", "apple"] as OAuthProvider[]).map((provider) => {
+                  const style = OAUTH_BUTTON_STYLE[provider];
+                  const Icon = provider === "google" ? GoogleIcon : provider === "microsoft" ? MicrosoftIcon : AppleIcon;
+                  const labelKey =
+                    provider === "google"
+                      ? "signIn.continueWithGoogle"
+                      : provider === "microsoft"
+                      ? "signIn.continueWithMicrosoft"
+                      : "signIn.continueWithApple";
+                  return (
+                    <TouchableOpacity
+                      key={provider}
+                      onPress={() => handleOAuth(provider)}
+                      disabled={oauthBusy !== null}
+                      className="flex-row items-center justify-center rounded-xl py-3"
+                      style={{
+                        backgroundColor: style.bg,
+                        borderWidth: 1,
+                        borderColor: style.border,
+                        opacity: oauthBusy !== null && oauthBusy !== provider ? 0.5 : 1,
+                      }}
+                    >
+                      {oauthBusy === provider ? (
+                        <ActivityIndicator color={style.ink} />
+                      ) : (
+                        <>
+                          <Icon size={16} color={provider === "apple" ? style.ink : undefined} />
+                          <Text className="text-[13px] ml-2.5 font-sans-semibold" style={{ color: style.ink }}>
+                            {t(labelKey)}
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-              <View className="flex-row items-center mb-4" style={{ gap: 10 }}>
+              <View className="flex-row items-center" style={{ gap: 10 }}>
                 <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
                 <Text className="text-[11px]" style={{ color: colors.ink3 }}>
                   {t("signIn.orContinueWithEmail")}
                 </Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
               </View>
-            </>
+            </View>
           )}
 
-          {mode !== "verify" ? (
-            <>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder={t("signIn.emailPlaceholder")}
-                placeholderTextColor={colors.ink4}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                className="rounded-xl px-4 py-3 mb-3"
-                style={{ backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border, color: colors.ink1 }}
-              />
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder={t("signIn.passwordPlaceholder")}
-                placeholderTextColor={colors.ink4}
-                secureTextEntry
-                className="rounded-xl px-4 py-3 mb-3"
-                style={{ backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border, color: colors.ink1 }}
-              />
-            </>
-          ) : (
-            <>
-              <Text className="text-sm mb-3" style={{ color: colors.ink2 }}>
-                {t("signIn.verificationSentTo", { email })}
-              </Text>
-              <TextInput
-                value={code}
-                onChangeText={setCode}
-                placeholder={t("signIn.verificationCodePlaceholder")}
-                placeholderTextColor={colors.ink4}
-                keyboardType="number-pad"
-                className="rounded-xl px-4 py-3 mb-3"
-                style={{ backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border, color: colors.ink1 }}
-              />
-            </>
-          )}
-
-          {error ? (
-            <Text className="text-[11.5px] mb-3" style={{ color: colors.highlightText }}>
-              {error}
-            </Text>
-          ) : null}
-
-          {/* Required by Clerk's bot-protection CAPTCHA for custom sign-up flows —
-              without this mount point it silently fails and signUp.create() never resolves.
-              https://clerk.com/docs/guides/development/custom-flows/bot-sign-up-protection */}
-          <View nativeID="clerk-captcha" className="mb-3" />
-
-          <TouchableOpacity
-            onPress={mode === "sign-in" ? handleSignIn : mode === "sign-up" ? handleSignUp : handleVerify}
-            disabled={busy}
-            className="rounded-xl py-3 items-center mb-3"
-            style={{ backgroundColor: colors.accent }}
-          >
-            {busy ? (
-              <ActivityIndicator color={colors.onAccent} />
+          <View style={{ gap: 12 }}>
+            {mode !== "verify" ? (
+              <>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder={t("signIn.emailPlaceholder")}
+                  placeholderTextColor={colors.ink4}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  className="rounded-xl px-4 py-3"
+                  style={{ backgroundColor: fieldBg, borderWidth: 1, borderColor: fieldBorder, color: colors.ink1 }}
+                />
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder={t("signIn.passwordPlaceholder")}
+                  placeholderTextColor={colors.ink4}
+                  secureTextEntry
+                  className="rounded-xl px-4 py-3"
+                  style={{ backgroundColor: fieldBg, borderWidth: 1, borderColor: fieldBorder, color: colors.ink1 }}
+                />
+              </>
             ) : (
-              <Text className="font-sans-bold" style={{ color: colors.onAccent }}>
-                {mode === "sign-in" ? t("signIn.signIn") : mode === "sign-up" ? t("signIn.createAccount") : t("signIn.verifyEmail")}
-              </Text>
+              <>
+                <Text className="text-sm" style={{ color: colors.ink2 }}>
+                  {t("signIn.verificationSentTo", { email })}
+                </Text>
+                <TextInput
+                  value={code}
+                  onChangeText={setCode}
+                  placeholder={t("signIn.verificationCodePlaceholder")}
+                  placeholderTextColor={colors.ink4}
+                  keyboardType="number-pad"
+                  className="rounded-xl px-4 py-3"
+                  style={{ backgroundColor: fieldBg, borderWidth: 1, borderColor: fieldBorder, color: colors.ink1 }}
+                />
+              </>
             )}
-          </TouchableOpacity>
+
+            {error ? (
+              <Text className="text-[11.5px]" style={{ color: colors.highlightText }}>
+                {error}
+              </Text>
+            ) : null}
+
+            {/* Required by Clerk's bot-protection CAPTCHA for custom sign-up flows —
+                without this mount point it silently fails and signUp.create() never resolves.
+                https://clerk.com/docs/guides/development/custom-flows/bot-sign-up-protection */}
+            <View nativeID="clerk-captcha" />
+
+            <TouchableOpacity
+              onPress={mode === "sign-in" ? handleSignIn : mode === "sign-up" ? handleSignUp : handleVerify}
+              disabled={busy}
+              className="rounded-xl py-3 items-center"
+              style={{ backgroundColor: colors.accent }}
+            >
+              {busy ? (
+                <ActivityIndicator color={colors.onAccent} />
+              ) : (
+                <Text className="font-sans-bold" style={{ color: colors.onAccent }}>
+                  {mode === "sign-in" ? t("signIn.signIn") : mode === "sign-up" ? t("signIn.createAccount") : t("signIn.verifyEmail")}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
 
           {mode !== "verify" && (
             <TouchableOpacity
@@ -543,7 +616,7 @@ export function SignInScreen() {
           )}
 
           <Text
-            className="text-[10px] leading-relaxed mt-6"
+            className="text-[10px] leading-relaxed"
             style={{ color: isDark ? "rgba(238,241,248,.35)" : "#9aa1b0" }}
           >
             {t("signIn.footerTagline")}

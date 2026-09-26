@@ -1,6 +1,6 @@
 import Svg, { Path, Rect } from "react-native-svg";
 
-export function GoogleIcon({ size = 18 }: { size?: number }) {
+export function GoogleIcon({ size = 18 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 18 18">
       <Path
@@ -23,22 +23,22 @@ export function GoogleIcon({ size = 18 }: { size?: number }) {
   );
 }
 
-export function AppleIcon({ size = 18 }: { size?: number }) {
+export function AppleIcon({ size = 18, color = "#fff" }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 18 18">
       <Path
-        fill="#fff"
+        fill={color}
         d="M13.15 9.53c-.02-1.96 1.6-2.9 1.67-2.95-.91-1.34-2.33-1.52-2.84-1.54-1.21-.12-2.36.71-2.98.71-.62 0-1.56-.7-2.57-.68a3.8 3.8 0 0 0-3.2 1.96c-1.37 2.38-.35 5.9.98 7.83.65.95 1.42 2.01 2.44 1.97 0.98-.04 1.35-.63 2.53-.63 1.18 0 1.51.63 2.54.6 1.05-.02 1.71-.96 2.34-1.91a8.3 8.3 0 0 0 1.06-2.17 3.6 3.6 0 0 1-2.17-3.19z"
       />
       <Path
-        fill="#fff"
+        fill={color}
         d="M11.32 3.75c.53-.64.88-1.53.78-2.42-.76.03-1.68.51-2.23 1.14-.49.56-.92 1.47-.8 2.33.85.07 1.72-.43 2.25-1.05z"
       />
     </Svg>
   );
 }
 
-export function MicrosoftIcon({ size = 18 }: { size?: number }) {
+export function MicrosoftIcon({ size = 18 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 18 18">
       <Rect x="0" y="0" width="8.5" height="8.5" fill="#F25022" />

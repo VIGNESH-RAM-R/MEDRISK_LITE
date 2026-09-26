@@ -6,3 +6,11 @@ dist/
 web-build/
 uploads/
 *.log
+node_modules/ 
+.env 
+.env.local 
+server/.env 
+app/.env 
+.expo/ 
+dist/ 
+build/ 
